@@ -5,23 +5,53 @@ import sys
 import io
 import arabic_reshaper
 from bidi.algorithm import get_display
+from groq import Groq
 import google.generativeai as genai
+from cerebras.cloud.sdk import Cerebras
+from datetime import datetime, timezone, timedelta
+
 
 # UTF-8 Fix
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
+
 app = FastAPI()
 
-# ---------------- CONFIG ----------------
-CHATWOOT_URL = "company.chatwoot.com"  # Replace with your Chatwoot instance URL
-ACCOUNT_ID = "<YOUR_ACCOUNT_ID>"      # Replace with your Chatwoot Account ID
-ACCESS_TOKEN = "<YOUR_ACCESS_TOKEN>"    # Replace with your Chatwoot API Access Token (must have read permissions)
 
-GOOGLE_API_KEYS = [
-    "<YOUR_GOOGLE_API_KEY_1>",
-    "<YOUR_GOOGLE_API_KEY_2>",
-    "<YOUR_GOOGLE_API_KEY_3>"
+# ---------------- CONFIG ----------------
+CHATWOOT_URL = "<YOUR_CHATWOOT_INSTANCE_URL>"  # e.g. https://company.chatwoot.com
+ACCOUNT_ID = "<YOUR_ACCOUNT_ID>"              # Chatwoot Account ID
+ACCESS_TOKEN = "<YOUR_ACCESS_TOKEN>"          # Chatwoot API token (read permissions required)
+
+
+# ---------------- GROQ KEYS ----------------
+GROQ_API_KEYS = [
+    "<GROQ_API_KEY_1>",
+    "<GROQ_API_KEY_2>",
+    "<GROQ_API_KEY_3>",
+    "<GROQ_API_KEY_4>",
+    "<GROQ_API_KEY_5>",
 ]
+
+
+# ---------------- GEMINI KEYS ----------------
+GEMINI_API_KEYS = [
+    "<GEMINI_API_KEY_1>",
+    "<GEMINI_API_KEY_2>",
+    "<GEMINI_API_KEY_3>",
+    "<GEMINI_API_KEY_4>",
+    "<GEMINI_API_KEY_5>",
+]
+
+
+# ---------------- CEREBRAS KEYS ----------------
+CEREBRAS_API_KEYS = [
+    "<CEREBRAS_API_KEY_1>",
+    "<CEREBRAS_API_KEY_2>",
+    "<CEREBRAS_API_KEY_3>",
+    "<CEREBRAS_API_KEY_4>",
+]
+
 
 # ---------------- ARABIC FIX ----------------
 def fix_arabic_display(text):
@@ -33,64 +63,96 @@ def fix_arabic_display(text):
         return text
 
 
-# ---------------- GEMINI AI ----------------
-def analyze_with_gemini(chat_history):
+# ---------------- PROMPT ----------------
+def build_prompt(chat_history):
+    return f"""
+You are a technical support assistant for monitoring the quality of solutions and the efficiency of the agent.
+If there are any spelling mistakes in the writing, you can overlook them. Just make sure the issue has been resolved or not.
+If more than one issue has been resolved, write them all.
 
-    print("\n--- Gemini Start ---")
-
-    api_key_used = None
-
-    # اختيار أول key شغال
-    for key in GOOGLE_API_KEYS:
-        try:
-            genai.configure(api_key=key)
-            api_key_used = key
-            print("✅ API Key OK")
-            break
-        except Exception as e:
-            print("❌ Key failed:", str(e))
-
-    if not api_key_used:
-        return "No valid API key"
-
-    prompt = f"""
-You are a technical support assistant for monitoring the quality of solutions and the efficiency of the agent. 
-If there are any spelling mistakes in the writing, you can overlook them. Just make sure the issue has been resolved or not. 
-If more than one issue has been resolved, write them all. 
 You are receiving a chat from the ChatWoot platform.
- We need to know the chat summary in terms of the status: was the issue resolved or not, and what type of issue it was.
-   Return two things to me: "Resolved" or "Not Resolved." Return the summary as follows:
-'تم حل مشكلة...' or 'لم يتم حل مشكلة...'
+
+Return:
+- "Resolved" or "Not Resolved"
+- Arabic summary:
+  'تم حل مشكلة...' or 'لم يتم حل مشكلة...'
+
+If unclear, classify as:
+"لم يتم تعريف مشكله" or "سيتم التواصل مع العميل قريبا"
 
 Chat:
 {chat_history}
 """
 
-    try:
-        model = genai.GenerativeModel('models/gemini-2.5-flash')
-        response = model.generate_content(prompt)
 
-        if response and hasattr(response, "text"):
-            print("✅ Gemini Success")
-            return response.text.strip()
-
-        return "Empty response"
-
-    except Exception as e:
-        print("❌ Primary error:", str(e))
-
-        # fallback
+# ---------------- AI PROVIDERS ----------------
+def try_groq(prompt):
+    for i, key in enumerate(GROQ_API_KEYS, 1):
         try:
-            print("🔄 Fallback model...")
+            print(f"🔄 Groq key {i}...")
+            client = Groq(api_key=key)
+            response = client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.3
+            )
+            return response.choices[0].message.content.strip()
+        except:
+            continue
+    return None
 
-            model = genai.GenerativeModel('models/gemini-1.5-pro')
-            response = model.generate_content(prompt)
 
-            return response.text.strip()
+def try_gemini(prompt):
+    for i, key in enumerate(GEMINI_API_KEYS, 1):
+        try:
+            print(f"🔄 Gemini key {i}...")
+            genai.configure(api_key=key)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            return model.generate_content(prompt).text.strip()
+        except:
+            continue
+    return None
 
-        except Exception as e2:
-            print("❌ Fallback error:", str(e2))
-            return f"Error in AI: {str(e)}"
+
+def try_cerebras(prompt):
+    for i, key in enumerate(CEREBRAS_API_KEYS, 1):
+        try:
+            print(f"🔄 Cerebras key {i}...")
+            client = Cerebras(api_key=key)
+            response = client.chat.completions.create(
+                model="llama-3.3-70b",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.3
+            )
+            return response.choices[0].message.content.strip()
+        except:
+            continue
+    return None
+
+
+# ---------------- MAIN AI ----------------
+def analyze_chat(chat_history):
+
+    prompt = build_prompt(chat_history)
+
+    print("[1] Groq...")
+    result = try_groq(prompt)
+    if result:
+        return result
+
+    print("[2] Gemini...")
+    result = try_gemini(prompt)
+    if result:
+        return result
+
+    print("[3] Cerebras...")
+    result = try_cerebras(prompt)
+    if result:
+        return result
+
+    return "⚠️ All AI providers failed"
 
 
 # ---------------- WEBHOOK ----------------
@@ -103,24 +165,26 @@ async def chatwoot_webhook(request: Request):
     if status == "resolved":
 
         conv_id = payload.get("id")
+
         customer_name = payload.get("meta", {}).get("sender", {}).get("name", "Unknown")
         customer_phone = payload.get("meta", {}).get("sender", {}).get("phone_number", "No Phone")
         agent_name = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
 
-        print("\n" + "="*50)
-        print(fix_arabic_display("🎯 STATUS: RESOLVED"))
-        print(f"{fix_arabic_display('👤 Customer')} : {customer_name}")
-        print(f"{fix_arabic_display('📞 Phone')}    : {customer_phone}")
-        print(f"{fix_arabic_display('👨‍💻 Agent')}    : {agent_name}")
-        print(f"🆔 Conv ID   : {conv_id}")
-        print("-"*50)
+        cairo_tz = timezone(timedelta(hours=3))
 
-        # ---------------- CHATWOOT API (UNCHANGED AS YOU WANTED) ----------------
+        resolved_dt = datetime.now(cairo_tz)
+
+        print("\n==============================")
+        print("🎯 RESOLVED")
+        print("Customer:", customer_name)
+        print("Phone:", customer_phone)
+        print("Agent:", agent_name)
+        print("Conv ID:", conv_id)
+
         api_url = f"{CHATWOOT_URL}/api/v1/accounts/{ACCOUNT_ID}/conversations/{conv_id}/messages"
 
         headers = {
             "api_access_token": ACCESS_TOKEN,
-            "api-access-token": ACCESS_TOKEN,
             "Authorization": f"Bearer {ACCESS_TOKEN}",
             "Content-Type": "application/json"
         }
@@ -130,38 +194,24 @@ async def chatwoot_webhook(request: Request):
 
             if response.status_code == 200:
 
-                data = response.json()
-                messages_list = data.get('payload') if isinstance(data, dict) else data
+                messages = response.json().get("payload", [])
 
-                full_chat_text = ""
+                full_chat = ""
 
-                if messages_list:
-                    print(fix_arabic_display("📝 CHAT LOG:"))
+                for msg in reversed(messages):
+                    content = msg.get("content")
+                    sender = msg.get("sender")
+                    name = sender.get("name") if sender else "System"
 
-                    for msg in reversed(messages_list):
-                        content = msg.get("content")
-                        sender = msg.get("sender")
+                    if content:
+                        full_chat += f"[{name}]: {content}\n"
 
-                        s_name = sender.get("name") if sender else "System"
+                ai_result = analyze_chat(full_chat)
 
-                        if content:
-                            line = f"[{s_name}]: {content}"
-                            print(fix_arabic_display(line))
-                            full_chat_text += line + "\n"
-
-                    print("-"*50)
-
-                    # ---------------- AI ----------------
-                    ai_result = analyze_with_gemini(full_chat_text)
-
-                    print(fix_arabic_display(f"🤖 الخلاصة: {ai_result}"))
-
-            else:
-                print(f"❌ Chatwoot API Error: {response.status_code}")
-                print(response.text)
+                print("🤖 RESULT:", ai_result)
 
         except Exception as e:
-            print("⚠️ Error:", str(e))
+            print("ERROR:", str(e))
 
     return {"status": "success"}
 
