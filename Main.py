@@ -9,19 +9,22 @@ from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
-
+import pyodbc
 
 # UTF-8 Fix
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-
 app = FastAPI()
 
+# تأكد من وجود الجدول عند بدء التشغيل
+@app.on_event("startup")
+async def startup_event():
+    init_db()
 
 # ---------------- CONFIG ----------------
-CHATWOOT_URL = "<YOUR_CHATWOOT_INSTANCE_URL>"  # e.g. https://company.chatwoot.com
-ACCOUNT_ID = "<YOUR_ACCOUNT_ID>"              # Chatwoot Account ID
-ACCESS_TOKEN = "<YOUR_ACCESS_TOKEN>"          # Chatwoot API token (read permissions required)
+CHATWOOT_URL = "<YOUR_CHATWOOT_INSTANCE_URL>"   # e.g. https://company.chatwoot.com
+ACCOUNT_ID = "<YOUR_ACCOUNT_ID>"                # Chatwoot account ID
+ACCESS_TOKEN = "<YOUR_CHATWOOT_ACCESS_TOKEN>"   # must have API access permissions
 
 
 # ---------------- GROQ KEYS ----------------
@@ -53,6 +56,126 @@ CEREBRAS_API_KEYS = [
 ]
 
 
+# ---------------- DATABASE CONFIG ----------------
+DB_CONN_STR = (
+    "DRIVER={SQL Server};"
+    "SERVER=<YOUR_DB_SERVER_IP_OR_HOST>;"
+    "DATABASE=<YOUR_DATABASE_NAME>;"
+    "Trusted_Connection=yes;"
+)
+
+TABLE_NAME = "<YOUR_REPORTS_TABLE_NAME>"
+CUSTOMER_TABLE = "<YOUR_CUSTOMERS_TABLE_NAME>"
+
+
+# ---------------- CREATE TABLES IF NOT EXISTS ----------------
+def init_db():
+    try:
+        conn = pyodbc.connect(DB_CONN_STR)
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+            IF NOT EXISTS (
+                SELECT * FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_NAME = '{TABLE_NAME}'
+            )
+            BEGIN
+                CREATE TABLE {TABLE_NAME} (
+                    id INT IDENTITY(1,1) PRIMARY KEY,
+                    customer_id INT,
+                    customer_name NVARCHAR(255),
+                    customer_phone NVARCHAR(50),
+                    classification NVARCHAR(500),
+                    agent_id INT,
+                    agent_name NVARCHAR(255),
+                    conv_id NVARCHAR(50),
+                    resolved_date BIGINT,
+                    resolved_time NVARCHAR(20),
+                    summary NVARCHAR(MAX),
+                    created_at DATETIME DEFAULT GETDATE()
+                )
+            END
+        """)
+
+        cursor.execute(f"""
+            IF NOT EXISTS (
+                SELECT * FROM INFORMATION_SCHEMA.TABLES
+                WHERE TABLE_NAME = '{CUSTOMER_TABLE}'
+            )
+            BEGIN
+                CREATE TABLE {CUSTOMER_TABLE} (
+                    customer_id INT PRIMARY KEY,
+                    customer_name NVARCHAR(255),
+                    customer_phone NVARCHAR(50)
+                )
+            END
+        """)
+
+        conn.commit()
+        conn.close()
+        print("✅ DB ready")
+
+    except Exception as e:
+        print(f"❌ DB init failed: {str(e)}")
+
+
+# ---------------- SAVE CUSTOMER ----------------
+def save_customer(customer_id, customer_name, customer_phone):
+    try:
+        conn = pyodbc.connect(DB_CONN_STR)
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+            IF NOT EXISTS (
+                SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = ?
+            )
+            BEGIN
+                INSERT INTO {CUSTOMER_TABLE} (customer_id, customer_name, customer_phone)
+                VALUES (?, ?, ?)
+            END
+        """, (customer_id, customer_id, customer_name, customer_phone))
+
+        conn.commit()
+        conn.close()
+
+    except Exception as e:
+        print(f"❌ Customer save failed: {str(e)}")
+
+
+# ---------------- SAVE TO DB ----------------
+def save_to_db(customer_id, customer_name, customer_phone,
+               classification, agent_id, agent_name,
+               conv_id, resolved_date, resolved_time, summary):
+
+    try:
+        conn = pyodbc.connect(DB_CONN_STR)
+        cursor = conn.cursor()
+
+        cursor.execute(f"""
+            INSERT INTO {TABLE_NAME}
+            (customer_id, customer_name, customer_phone, classification,
+             agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            customer_id,
+            customer_name,
+            customer_phone,
+            classification,
+            agent_id,
+            agent_name,
+            str(conv_id),
+            resolved_date,
+            resolved_time,
+            summary
+        ))
+
+        conn.commit()
+        conn.close()
+
+    except Exception as e:
+        print(f"❌ DB insert failed: {str(e)}")
+
+
 # ---------------- ARABIC FIX ----------------
 def fix_arabic_display(text):
     if not text:
@@ -67,37 +190,24 @@ def fix_arabic_display(text):
 def build_prompt(chat_history):
     return f"""
 You are a technical support assistant for monitoring the quality of solutions and the efficiency of the agent.
-If there are any spelling mistakes in the writing, you can overlook them. Just make sure the issue has been resolved or not.
-If more than one issue has been resolved, write them all.
-
-You are receiving a chat from the ChatWoot platform.
-
 Return:
-- "Resolved" or "Not Resolved"
-- Arabic summary:
-  'تم حل مشكلة...' or 'لم يتم حل مشكلة...'
-
-If unclear, classify as:
-"لم يتم تعريف مشكله" or "سيتم التواصل مع العميل قريبا"
+الخلاصة + التصنيف فقط (Arabic only)
 
 Chat:
 {chat_history}
 """
 
 
-# ---------------- AI PROVIDERS ----------------
+# ---------------- AI FUNCTIONS ----------------
 def try_groq(prompt):
     for i, key in enumerate(GROQ_API_KEYS, 1):
         try:
-            print(f"🔄 Groq key {i}...")
             client = Groq(api_key=key)
-            response = client.chat.completions.create(
+            res = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=500,
-                temperature=0.3
+                messages=[{"role": "user", "content": prompt}]
             )
-            return response.choices[0].message.content.strip()
+            return res.choices[0].message.content.strip()
         except:
             continue
     return None
@@ -106,7 +216,6 @@ def try_groq(prompt):
 def try_gemini(prompt):
     for i, key in enumerate(GEMINI_API_KEYS, 1):
         try:
-            print(f"🔄 Gemini key {i}...")
             genai.configure(api_key=key)
             model = genai.GenerativeModel("gemini-1.5-flash")
             return model.generate_content(prompt).text.strip()
@@ -118,15 +227,12 @@ def try_gemini(prompt):
 def try_cerebras(prompt):
     for i, key in enumerate(CEREBRAS_API_KEYS, 1):
         try:
-            print(f"🔄 Cerebras key {i}...")
             client = Cerebras(api_key=key)
-            response = client.chat.completions.create(
+            res = client.chat.completions.create(
                 model="llama-3.3-70b",
-                messages=[{"role": "user", "content": prompt}],
-                max_tokens=500,
-                temperature=0.3
+                messages=[{"role": "user", "content": prompt}]
             )
-            return response.choices[0].message.content.strip()
+            return res.choices[0].message.content.strip()
         except:
             continue
     return None
@@ -134,25 +240,14 @@ def try_cerebras(prompt):
 
 # ---------------- MAIN AI ----------------
 def analyze_chat(chat_history):
-
     prompt = build_prompt(chat_history)
 
-    print("[1] Groq...")
-    result = try_groq(prompt)
-    if result:
-        return result
-
-    print("[2] Gemini...")
-    result = try_gemini(prompt)
-    if result:
-        return result
-
-    print("[3] Cerebras...")
-    result = try_cerebras(prompt)
-    if result:
-        return result
-
-    return "⚠️ All AI providers failed"
+    return (
+        try_groq(prompt)
+        or try_gemini(prompt)
+        or try_cerebras(prompt)
+        or "ALL PROVIDERS FAILED"
+    )
 
 
 # ---------------- WEBHOOK ----------------
@@ -165,28 +260,20 @@ async def chatwoot_webhook(request: Request):
     if status == "resolved":
 
         conv_id = payload.get("id")
-
+        customer_id = payload.get("meta", {}).get("sender", {}).get("id")
         customer_name = payload.get("meta", {}).get("sender", {}).get("name", "Unknown")
         customer_phone = payload.get("meta", {}).get("sender", {}).get("phone_number", "No Phone")
+
+        agent_id = payload.get("meta", {}).get("assignee", {}).get("id")
         agent_name = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
 
         cairo_tz = timezone(timedelta(hours=3))
-
         resolved_dt = datetime.now(cairo_tz)
-
-        print("\n==============================")
-        print("🎯 RESOLVED")
-        print("Customer:", customer_name)
-        print("Phone:", customer_phone)
-        print("Agent:", agent_name)
-        print("Conv ID:", conv_id)
 
         api_url = f"{CHATWOOT_URL}/api/v1/accounts/{ACCOUNT_ID}/conversations/{conv_id}/messages"
 
         headers = {
-            "api_access_token": ACCESS_TOKEN,
-            "Authorization": f"Bearer {ACCESS_TOKEN}",
-            "Content-Type": "application/json"
+            "api_access_token": ACCESS_TOKEN
         }
 
         try:
@@ -195,23 +282,31 @@ async def chatwoot_webhook(request: Request):
             if response.status_code == 200:
 
                 messages = response.json().get("payload", [])
-
-                full_chat = ""
+                chat_text = ""
 
                 for msg in reversed(messages):
-                    content = msg.get("content")
-                    sender = msg.get("sender")
-                    name = sender.get("name") if sender else "System"
+                    if msg.get("content"):
+                        chat_text += f"{msg.get('content')}\n"
 
-                    if content:
-                        full_chat += f"[{name}]: {content}\n"
+                ai_result = analyze_chat(chat_text)
 
-                ai_result = analyze_chat(full_chat)
+                save_customer(customer_id, customer_name, customer_phone)
 
-                print("🤖 RESULT:", ai_result)
+                save_to_db(
+                    customer_id,
+                    customer_name,
+                    customer_phone,
+                    "AUTO",
+                    agent_id,
+                    agent_name,
+                    conv_id,
+                    int(resolved_dt.strftime("%Y%m%d")),
+                    resolved_dt.strftime("%I:%M %p"),
+                    ai_result
+                )
 
         except Exception as e:
-            print("ERROR:", str(e))
+            print(e)
 
     return {"status": "success"}
 
