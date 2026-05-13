@@ -10,6 +10,7 @@ import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
 import pyodbc
+import os
 
 # UTF-8 Fix
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -22,50 +23,49 @@ async def startup_event():
     init_db()
 
 # ---------------- CONFIG ----------------
-CHATWOOT_URL = "<YOUR_CHATWOOT_INSTANCE_URL>"   # e.g. https://company.chatwoot.com
-ACCOUNT_ID = "<YOUR_ACCOUNT_ID>"                # Chatwoot account ID
-ACCESS_TOKEN = "<YOUR_CHATWOOT_ACCESS_TOKEN>"   # must have API access permissions
-
+CHATWOOT_URL = os.getenv("CHATWOOT_URL")
+ACCOUNT_ID   = os.getenv("ACCOUNT_ID")
+ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
 
 # ---------------- GROQ KEYS ----------------
 GROQ_API_KEYS = [
-    "<GROQ_API_KEY_1>",
-    "<GROQ_API_KEY_2>",
-    "<GROQ_API_KEY_3>",
-    "<GROQ_API_KEY_4>",
-    "<GROQ_API_KEY_5>",
+    os.getenv("GROQ_KEY_1"),
+    os.getenv("GROQ_KEY_2"),
+    os.getenv("GROQ_KEY_3"),
+    os.getenv("GROQ_KEY_4"),
+    os.getenv("GROQ_KEY_5"),
 ]
-
 
 # ---------------- GEMINI KEYS ----------------
 GEMINI_API_KEYS = [
-    "<GEMINI_API_KEY_1>",
-    "<GEMINI_API_KEY_2>",
-    "<GEMINI_API_KEY_3>",
-    "<GEMINI_API_KEY_4>",
-    "<GEMINI_API_KEY_5>",
+    os.getenv("GEMINI_KEY_1"),
+    os.getenv("GEMINI_KEY_2"),
+    os.getenv("GEMINI_KEY_3"),
+    os.getenv("GEMINI_KEY_4"),
+    os.getenv("GEMINI_KEY_5"),
 ]
-
 
 # ---------------- CEREBRAS KEYS ----------------
 CEREBRAS_API_KEYS = [
-    "<CEREBRAS_API_KEY_1>",
-    "<CEREBRAS_API_KEY_2>",
-    "<CEREBRAS_API_KEY_3>",
-    "<CEREBRAS_API_KEY_4>",
+    os.getenv("CEREBRAS_KEY_1"),
+    os.getenv("CEREBRAS_KEY_2"),
+    os.getenv("CEREBRAS_KEY_3"),
+    os.getenv("CEREBRAS_KEY_4"),
 ]
 
 
 # ---------------- DATABASE CONFIG ----------------
 DB_CONN_STR = (
-    "DRIVER={SQL Server};"
-    "SERVER=<YOUR_DB_SERVER_IP_OR_HOST>;"
-    "DATABASE=<YOUR_DATABASE_NAME>;"
-    "Trusted_Connection=yes;"
+    f"DRIVER={{SQL Server}};"
+    f"SERVER={os.getenv('DB_SERVER')};"
+    f"DATABASE={os.getenv('DB_NAME')};"
+    f"UID={os.getenv('DB_USER')};"
+    f"PWD={os.getenv('DB_PASSWORD')};"
+    "TrustServerCertificate=yes;"
 )
 
-TABLE_NAME = "<YOUR_REPORTS_TABLE_NAME>"
-CUSTOMER_TABLE = "<YOUR_CUSTOMERS_TABLE_NAME>"
+TABLE_NAME     = "Customer_service_reports_by_A"
+CUSTOMER_TABLE = "customer_detail_by_A"
 
 
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
@@ -74,6 +74,7 @@ def init_db():
         conn = pyodbc.connect(DB_CONN_STR)
         cursor = conn.cursor()
 
+        # جدول التقارير الرئيسي
         cursor.execute(f"""
             IF NOT EXISTS (
                 SELECT * FROM INFORMATION_SCHEMA.TABLES
@@ -81,22 +82,23 @@ def init_db():
             )
             BEGIN
                 CREATE TABLE {TABLE_NAME} (
-                    id INT IDENTITY(1,1) PRIMARY KEY,
-                    customer_id INT,
-                    customer_name NVARCHAR(255),
-                    customer_phone NVARCHAR(50),
-                    classification NVARCHAR(500),
-                    agent_id INT,
-                    agent_name NVARCHAR(255),
-                    conv_id NVARCHAR(50),
-                    resolved_date BIGINT,
-                    resolved_time NVARCHAR(20),
-                    summary NVARCHAR(MAX),
-                    created_at DATETIME DEFAULT GETDATE()
+                    id               INT IDENTITY(1,1) PRIMARY KEY,
+                    customer_id      INT,
+                    customer_name    NVARCHAR(255),
+                    customer_phone   NVARCHAR(50),
+                    classification   NVARCHAR(500),
+                    agent_id         INT,
+                    agent_name       NVARCHAR(255),
+                    conv_id          NVARCHAR(50),
+                    resolved_date    BIGINT,
+                    resolved_time    NVARCHAR(20),
+                    summary          NVARCHAR(MAX),
+                    created_at       DATETIME DEFAULT GETDATE()
                 )
             END
         """)
 
+        # جدول بيانات العملاء (كل عميل مرة واحدة بس)
         cursor.execute(f"""
             IF NOT EXISTS (
                 SELECT * FROM INFORMATION_SCHEMA.TABLES
@@ -104,8 +106,8 @@ def init_db():
             )
             BEGIN
                 CREATE TABLE {CUSTOMER_TABLE} (
-                    customer_id INT PRIMARY KEY,
-                    customer_name NVARCHAR(255),
+                    customer_id    INT PRIMARY KEY,
+                    customer_name  NVARCHAR(255),
                     customer_phone NVARCHAR(50)
                 )
             END
@@ -113,18 +115,17 @@ def init_db():
 
         conn.commit()
         conn.close()
-        print("✅ DB ready")
-
+        print(f"✅ DB ready — tables '{TABLE_NAME}' & '{CUSTOMER_TABLE}' exist or just created")
     except Exception as e:
         print(f"❌ DB init failed: {str(e)}")
 
 
-# ---------------- SAVE CUSTOMER ----------------
+# ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
         conn = pyodbc.connect(DB_CONN_STR)
         cursor = conn.cursor()
-
+        # لو الـ customer_id موجود أصلاً → متعملش حاجة
         cursor.execute(f"""
             IF NOT EXISTS (
                 SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = ?
@@ -134,27 +135,21 @@ def save_customer(customer_id, customer_name, customer_phone):
                 VALUES (?, ?, ?)
             END
         """, (customer_id, customer_id, customer_name, customer_phone))
-
         conn.commit()
         conn.close()
-
+        print(f"✅ Customer check done — id: {customer_id}")
     except Exception as e:
         print(f"❌ Customer save failed: {str(e)}")
 
 
-# ---------------- SAVE TO DB ----------------
-def save_to_db(customer_id, customer_name, customer_phone,
-               classification, agent_id, agent_name,
-               conv_id, resolved_date, resolved_time, summary):
-
+# ---------------- INSERT RECORD ----------------
+def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
         conn = pyodbc.connect(DB_CONN_STR)
         cursor = conn.cursor()
-
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
-            (customer_id, customer_name, customer_phone, classification,
-             agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
+                (customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             customer_id,
@@ -168,10 +163,9 @@ def save_to_db(customer_id, customer_name, customer_phone,
             resolved_time,
             summary
         ))
-
         conn.commit()
         conn.close()
-
+        print(f"✅ Record saved to DB — conv_id: {conv_id} | customer_id: {customer_id}")
     except Exception as e:
         print(f"❌ DB insert failed: {str(e)}")
 
@@ -190,64 +184,135 @@ def fix_arabic_display(text):
 def build_prompt(chat_history):
     return f"""
 You are a technical support assistant for monitoring the quality of solutions and the efficiency of the agent.
-Return:
-الخلاصة + التصنيف فقط (Arabic only)
+If there are any spelling mistakes in the writing, you can overlook them. Just make sure the issue has been resolved or not.
+If more than one issue has been resolved, write them all.
+You are receiving a chat from the ChatWoot platform.
+
+You MUST respond in EXACTLY this format — no extra text before or after:
+
+الخلاصة: وصف تفصيلي للمشكلة بناءً على تاريخ المحادثة.
+التصنيف: تم حل مشكلة:ملخص المشكله / لم يتم حل مشكلة:ملخص المشكله / العميل لا يرد / سيتم التواصل مع العميل قريباً(من خلال كلام العميل او مهندس الدعم) / لم يتم تعريف مشكلة / لم يتم تعريف حل
+
+Rules:
+- الخلاصة: must be a detailed description of the problem using the chat history (Never summarize welcome messages, agent assignments, or review or reopen conversations; instead, include only the actual transcript of the conversation between the client and the agent. Strive to be as concise as possible, but never compromise on accuracy, clarity, and comprehensiveness.).
+- التصنيف: pick the most accurate category based on the chat.
+- Always write in Arabic.
+- Do NOT add any extra lines or explanations outside the two lines above.
 
 Chat:
 {chat_history}
 """
 
 
-# ---------------- AI FUNCTIONS ----------------
+# ---------------- PARSE AI RESULT ----------------
+def parse_ai_result(raw_text):
+    """يفصل الخلاصة عن التصنيف من رد الـ AI"""
+    summary = ""
+    classification = ""
+    try:
+        for line in raw_text.splitlines():
+            line = line.strip()
+            if line.startswith("الخلاصة:"):
+                summary = line.replace("الخلاصة:", "").strip()
+            elif line.startswith("التصنيف:"):
+                classification = line.replace("التصنيف:", "").strip()
+    except Exception:
+        summary = raw_text
+        classification = "غير محدد"
+
+    if not summary:
+        summary = raw_text
+    if not classification:
+        classification = "غير محدد"
+
+    return summary, classification
+
+
+# ---------------- GROQ ----------------
 def try_groq(prompt):
     for i, key in enumerate(GROQ_API_KEYS, 1):
         try:
+            print(f"🔄 Groq key {i}/{len(GROQ_API_KEYS)}...")
             client = Groq(api_key=key)
-            res = client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.3
             )
-            return res.choices[0].message.content.strip()
-        except:
+            result = response.choices[0].message.content.strip()
+            print(f"✅ Groq key {i} success")
+            return result
+        except Exception as e:
+            print(f"❌ Groq key {i} failed: {str(e)}")
             continue
     return None
 
 
+# ---------------- GEMINI ----------------
 def try_gemini(prompt):
     for i, key in enumerate(GEMINI_API_KEYS, 1):
         try:
+            print(f"🔄 Gemini key {i}/{len(GEMINI_API_KEYS)}...")
             genai.configure(api_key=key)
             model = genai.GenerativeModel("gemini-1.5-flash")
-            return model.generate_content(prompt).text.strip()
-        except:
+            response = model.generate_content(prompt)
+            result = response.text.strip()
+            print(f"✅ Gemini key {i} success")
+            return result
+        except Exception as e:
+            print(f"❌ Gemini key {i} failed: {str(e)}")
             continue
     return None
 
 
+# ---------------- CEREBRAS ----------------
 def try_cerebras(prompt):
     for i, key in enumerate(CEREBRAS_API_KEYS, 1):
         try:
+            print(f"🔄 Cerebras key {i}/{len(CEREBRAS_API_KEYS)}...")
             client = Cerebras(api_key=key)
-            res = client.chat.completions.create(
+            response = client.chat.completions.create(
                 model="llama-3.3-70b",
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=500,
+                temperature=0.3
             )
-            return res.choices[0].message.content.strip()
-        except:
+            result = response.choices[0].message.content.strip()
+            print(f"✅ Cerebras key {i} success")
+            return result
+        except Exception as e:
+            print(f"❌ Cerebras key {i} failed: {str(e)}")
             continue
     return None
 
 
-# ---------------- MAIN AI ----------------
+# ---------------- MAIN AI FUNCTION ----------------
 def analyze_chat(chat_history):
+    print("\n--- AI Analysis Start ---")
     prompt = build_prompt(chat_history)
 
-    return (
-        try_groq(prompt)
-        or try_gemini(prompt)
-        or try_cerebras(prompt)
-        or "ALL PROVIDERS FAILED"
-    )
+    # 1️⃣ Groq
+    print("\n[1] Trying Groq...")
+    result = try_groq(prompt)
+    if result:
+        return result
+
+    # 2️⃣ Gemini
+    print("\n[2] Groq exhausted → Trying Gemini...")
+    result = try_gemini(prompt)
+    if result:
+        return result
+
+    # 3️⃣ Cerebras
+    print("\n[3] Gemini exhausted → Trying Cerebras...")
+    result = try_cerebras(prompt)
+    if result:
+        return result
+
+    # كل الـ providers خلصوا
+    print("\n❌ All AI providers exhausted")
+    return "⚠️ فشل الاتصال بجميع الـ AI providers - تحقق من الـ API keys"
 
 
 # ---------------- WEBHOOK ----------------
@@ -260,57 +325,106 @@ async def chatwoot_webhook(request: Request):
     if status == "resolved":
 
         conv_id = payload.get("id")
-        customer_id = payload.get("meta", {}).get("sender", {}).get("id")
+        customer_id   = payload.get("meta", {}).get("sender", {}).get("id")
         customer_name = payload.get("meta", {}).get("sender", {}).get("name", "Unknown")
         customer_phone = payload.get("meta", {}).get("sender", {}).get("phone_number", "No Phone")
+        agent_id      = payload.get("meta", {}).get("assignee", {}).get("id")
+        agent_name    = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
 
-        agent_id = payload.get("meta", {}).get("assignee", {}).get("id")
-        agent_name = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
+        # ---------------- DATE & TIME ----------------
+        cairo_tz = timezone(timedelta(hours=3))  # توقيت القاهرة UTC+3
 
-        cairo_tz = timezone(timedelta(hours=3))
-        resolved_dt = datetime.now(cairo_tz)
+        resolved_at_raw = payload.get("resolved_at") or payload.get("updated_at")
+        if resolved_at_raw:
+            try:
+                resolved_dt = datetime.fromtimestamp(int(resolved_at_raw), tz=cairo_tz)
+            except Exception:
+                try:
+                    resolved_dt = datetime.fromisoformat(str(resolved_at_raw).replace("Z", "+00:00")).astimezone(cairo_tz)
+                except Exception:
+                    resolved_dt = datetime.now(cairo_tz)
+        else:
+            resolved_dt = datetime.now(cairo_tz)
+
+        resolved_date = int(resolved_dt.strftime("%Y%m%d"))
+        resolved_time = resolved_dt.strftime("%I:%M %p")
+
+        print("\n" + "="*50)
+        print(fix_arabic_display("🎯 STATUS: RESOLVED"))
+        print(f"🪪 Customer ID: {customer_id}")
+        print(f"{fix_arabic_display('👤 Customer')} : {fix_arabic_display(customer_name)}")
+        print(f"{fix_arabic_display('📞 Phone')}    : {customer_phone}")
+        print(f"🪪 Agent ID  : {agent_id}")
+        print(f"{fix_arabic_display('👨‍💻 Agent')}    : {fix_arabic_display(agent_name)}")
+        print(f"🆔 Conv ID   : {conv_id}")
+        print(f"📅 Date      : {resolved_date}")
+        print(f"🕐 Time      : {resolved_time}")
 
         api_url = f"{CHATWOOT_URL}/api/v1/accounts/{ACCOUNT_ID}/conversations/{conv_id}/messages"
 
         headers = {
-            "api_access_token": ACCESS_TOKEN
+            "api_access_token": ACCESS_TOKEN,
+            "api-access-token": ACCESS_TOKEN,
+            "Authorization": f"Bearer {ACCESS_TOKEN}",
+            "Content-Type": "application/json"
         }
 
         try:
             response = requests.get(api_url, headers=headers)
 
             if response.status_code == 200:
+                data = response.json()
+                messages_list = data.get('payload') if isinstance(data, dict) else data
 
-                messages = response.json().get("payload", [])
-                chat_text = ""
+                full_chat_text = ""
 
-                for msg in reversed(messages):
-                    if msg.get("content"):
-                        chat_text += f"{msg.get('content')}\n"
+                if messages_list:
+                    for msg in reversed(messages_list):
+                        content = msg.get("content")
+                        sender = msg.get("sender")
+                        s_name = sender.get("name") if sender else "System"
 
-                ai_result = analyze_chat(chat_text)
+                        if content:
+                            line = f"[{s_name}]: {content}"
+                            full_chat_text += line + "\n"
 
-                save_customer(customer_id, customer_name, customer_phone)
+                    # ---------------- AI ----------------
+                    ai_raw = analyze_chat(full_chat_text)
+                    summary, classification = parse_ai_result(ai_raw)
 
-                save_to_db(
-                    customer_id,
-                    customer_name,
-                    customer_phone,
-                    "AUTO",
-                    agent_id,
-                    agent_name,
-                    conv_id,
-                    int(resolved_dt.strftime("%Y%m%d")),
-                    resolved_dt.strftime("%I:%M %p"),
-                    ai_result
-                )
+                    print(fix_arabic_display(f"📋 الخلاصة    : {summary}"))
+                    print(fix_arabic_display(f"🏷️  التصنيف    : {classification}"))
+                    print("="*50 + "\n")
+
+                    # ---------------- SAVE CUSTOMER ----------------
+                    save_customer(
+                        customer_id=customer_id,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone
+                    )
+
+                    # ---------------- SAVE TO DB ----------------
+                    save_to_db(
+                        customer_id=customer_id,
+                        customer_name=customer_name,
+                        customer_phone=customer_phone,
+                        classification=classification,
+                        agent_id=agent_id,
+                        agent_name=agent_name,
+                        conv_id=conv_id,
+                        resolved_date=resolved_date,
+                        resolved_time=resolved_time,
+                        summary=summary
+                    )
+
+            else:
+                print(f"❌ Chatwoot API Error: {response.status_code}")
 
         except Exception as e:
-            print(e)
+            print("⚠️ Error:", str(e))
 
     return {"status": "success"}
 
 
-# ---------------- RUN ----------------
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
