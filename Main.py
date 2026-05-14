@@ -315,6 +315,11 @@ def analyze_chat(chat_history):
     return "⚠️ فشل الاتصال بجميع الـ AI providers - تحقق من الـ API keys"
 
 
+@app.get("/health")
+async def health_check():
+    return {"status": "alive"}
+
+
 # ---------------- WEBHOOK ----------------
 @app.post("/webhook")
 async def chatwoot_webhook(request: Request):
