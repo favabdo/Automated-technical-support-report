@@ -64,7 +64,6 @@ DB_CONN_STR = (
     f"DATABASE={os.getenv('DB_NAME')};"
     f"UID={os.getenv('DB_USER')};"
     f"PWD={os.getenv('DB_PASSWORD')};"
-    "TrustServerCertificate=yes;"
 )
 
 TABLE_NAME     = "Customer_service_reports_by_A"
