@@ -13,7 +13,8 @@ import pyodbc
 import os
 
 # UTF-8 Fix
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+# UTF-8 Fix
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
 
 app = FastAPI()
 
