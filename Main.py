@@ -9,14 +9,11 @@ from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
-import pyodbc
+import pymssql
 import os
 
-
-
-os.environ['PYTHONUNBUFFERED'] = '1'
 # UTF-8 Fix
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 app = FastAPI()
 
@@ -58,14 +55,11 @@ CEREBRAS_API_KEYS = [
 
 
 # ---------------- DATABASE CONFIG ----------------
-DB_CONN_STR = (
-    f"DRIVER={{ODBC Driver 18 for SQL Server}};"
-    f"SERVER={os.getenv('DB_SERVER')};"
-    f"DATABASE={os.getenv('DB_NAME')};"
-    f"UID={os.getenv('DB_USER')};"
-    f"PWD={os.getenv('DB_PASSWORD')};"
-    "TrustServerCertificate=yes;"
-)
+DB_SERVER   = os.getenv('DB_SERVER')
+DB_NAME     = os.getenv('DB_NAME')
+DB_USER     = os.getenv('DB_USER')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
@@ -73,7 +67,7 @@ CUSTOMER_TABLE = "customer_detail_by_A"
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pyodbc.connect(DB_CONN_STR)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
         cursor = conn.cursor()
 
         # جدول التقارير الرئيسي
@@ -125,7 +119,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pyodbc.connect(DB_CONN_STR)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
         cursor = conn.cursor()
         # لو الـ customer_id موجود أصلاً → متعملش حاجة
         cursor.execute(f"""
@@ -147,7 +141,7 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pyodbc.connect(DB_CONN_STR)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
@@ -314,12 +308,15 @@ def analyze_chat(chat_history):
 
     # كل الـ providers خلصوا
     print("\n❌ All AI providers exhausted")
-    return "⚠️ فشل الاتصال بجميع الـ AI providers - تحقق من الـ API keys"
+    summary = "تم انتهاء جميع الـ API keys المعرفة ولم يتم التحليل"
+    classification = "تم حل المشكلة"
+    return f"الخلاصة: {summary}\nالتصنيف: {classification}"
 
 
 @app.get("/health")
 async def health_check():
     return {"status": "alive"}
+
 
 @app.get("/drivers")
 async def check_drivers():
