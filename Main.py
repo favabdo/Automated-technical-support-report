@@ -12,8 +12,9 @@ from datetime import datetime, timezone, timedelta
 import pymssql
 import os
 
+os.environ['PYTHONUNBUFFERED'] = '1'
 # UTF-8 Fix
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_buffering=True)
 
 app = FastAPI()
 
@@ -53,7 +54,6 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_4"),
 ]
 
-
 # ---------------- DATABASE CONFIG ----------------
 DB_SERVER   = os.getenv('DB_SERVER')
 DB_NAME     = os.getenv('DB_NAME')
@@ -70,7 +70,6 @@ def init_db():
         conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
         cursor = conn.cursor()
 
-        # جدول التقارير الرئيسي
         cursor.execute(f"""
             IF NOT EXISTS (
                 SELECT * FROM INFORMATION_SCHEMA.TABLES
@@ -94,7 +93,6 @@ def init_db():
             END
         """)
 
-        # جدول بيانات العملاء (كل عميل مرة واحدة بس)
         cursor.execute(f"""
             IF NOT EXISTS (
                 SELECT * FROM INFORMATION_SCHEMA.TABLES
@@ -121,7 +119,6 @@ def save_customer(customer_id, customer_name, customer_phone):
     try:
         conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
         cursor = conn.cursor()
-        # لو الـ customer_id موجود أصلاً → متعملش حاجة
         cursor.execute(f"""
             IF NOT EXISTS (
                 SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = ?
@@ -146,7 +143,7 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
                 (customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
         """, (
             customer_id,
             customer_name,
@@ -202,7 +199,6 @@ Chat:
 
 # ---------------- PARSE AI RESULT ----------------
 def parse_ai_result(raw_text):
-    """يفصل الخلاصة عن التصنيف من رد الـ AI"""
     summary = ""
     classification = ""
     try:
@@ -227,6 +223,8 @@ def parse_ai_result(raw_text):
 # ---------------- GROQ ----------------
 def try_groq(prompt):
     for i, key in enumerate(GROQ_API_KEYS, 1):
+        if not key:
+            continue
         try:
             print(f"🔄 Groq key {i}/{len(GROQ_API_KEYS)}...")
             client = Groq(api_key=key)
@@ -248,6 +246,8 @@ def try_groq(prompt):
 # ---------------- GEMINI ----------------
 def try_gemini(prompt):
     for i, key in enumerate(GEMINI_API_KEYS, 1):
+        if not key:
+            continue
         try:
             print(f"🔄 Gemini key {i}/{len(GEMINI_API_KEYS)}...")
             genai.configure(api_key=key)
@@ -265,6 +265,8 @@ def try_gemini(prompt):
 # ---------------- CEREBRAS ----------------
 def try_cerebras(prompt):
     for i, key in enumerate(CEREBRAS_API_KEYS, 1):
+        if not key:
+            continue
         try:
             print(f"🔄 Cerebras key {i}/{len(CEREBRAS_API_KEYS)}...")
             client = Cerebras(api_key=key)
@@ -288,41 +290,28 @@ def analyze_chat(chat_history):
     print("\n--- AI Analysis Start ---")
     prompt = build_prompt(chat_history)
 
-    # 1️⃣ Groq
     print("\n[1] Trying Groq...")
     result = try_groq(prompt)
     if result:
         return result
 
-    # 2️⃣ Gemini
     print("\n[2] Groq exhausted → Trying Gemini...")
     result = try_gemini(prompt)
     if result:
         return result
 
-    # 3️⃣ Cerebras
     print("\n[3] Gemini exhausted → Trying Cerebras...")
     result = try_cerebras(prompt)
     if result:
         return result
 
-    # كل الـ providers خلصوا
     print("\n❌ All AI providers exhausted")
-    summary = "تم انتهاء جميع الـ API keys المعرفة ولم يتم التحليل"
-    classification = "تم حل المشكلة"
-    return f"الخلاصة: {summary}\nالتصنيف: {classification}"
+    return "الخلاصة: تم انتهاء جميع الـ API keys المعرفة ولم يتم التحليل\nالتصنيف: تم حل المشكلة"
 
 
 @app.get("/health")
 async def health_check():
     return {"status": "alive"}
-
-
-@app.get("/drivers")
-async def check_drivers():
-    import subprocess
-    result = subprocess.run(['odbcinst', '-q', '-d'], capture_output=True, text=True)
-    return {"drivers": result.stdout, "errors": result.stderr}
 
 
 # ---------------- WEBHOOK ----------------
@@ -334,15 +323,15 @@ async def chatwoot_webhook(request: Request):
 
     if status == "resolved":
 
-        conv_id = payload.get("id")
-        customer_id   = payload.get("meta", {}).get("sender", {}).get("id")
-        customer_name = payload.get("meta", {}).get("sender", {}).get("name", "Unknown")
+        conv_id        = payload.get("id")
+        customer_id    = payload.get("meta", {}).get("sender", {}).get("id")
+        customer_name  = payload.get("meta", {}).get("sender", {}).get("name", "Unknown")
         customer_phone = payload.get("meta", {}).get("sender", {}).get("phone_number", "No Phone")
-        agent_id      = payload.get("meta", {}).get("assignee", {}).get("id")
-        agent_name    = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
+        agent_id       = payload.get("meta", {}).get("assignee", {}).get("id")
+        agent_name     = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
 
         # ---------------- DATE & TIME ----------------
-        cairo_tz = timezone(timedelta(hours=3))  # توقيت القاهرة UTC+3
+        cairo_tz = timezone(timedelta(hours=3))
 
         resolved_at_raw = payload.get("resolved_at") or payload.get("updated_at")
         if resolved_at_raw:
@@ -391,12 +380,11 @@ async def chatwoot_webhook(request: Request):
                 if messages_list:
                     for msg in reversed(messages_list):
                         content = msg.get("content")
-                        sender = msg.get("sender")
-                        s_name = sender.get("name") if sender else "System"
+                        sender  = msg.get("sender")
+                        s_name  = sender.get("name") if sender else "System"
 
                         if content:
-                            line = f"[{s_name}]: {content}"
-                            full_chat_text += line + "\n"
+                            full_chat_text += f"[{s_name}]: {content}\n"
 
                     # ---------------- AI ----------------
                     ai_raw = analyze_chat(full_chat_text)
