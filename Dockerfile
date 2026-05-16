@@ -1,15 +1,14 @@
 FROM python:3.11-slim
 
-# تثبيت ODBC Driver لـ SQL Server
+# تثبيت ODBC Driver 17 لـ SQL Server
 RUN apt-get update && apt-get install -y \
     curl \
     gnupg \
-    unixodbc \
-    unixodbc-dev \
+    apt-transport-https \
     && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
-    && curl https://packages.microsoft.com/config/debian/11/prod.list > /etc/apt/sources.list.d/mssql-release.list \
+    && curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list > /etc/apt/sources.list.d/mssql-release.list \
     && apt-get update \
-    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 \
+    && ACCEPT_EULA=Y apt-get install -y msodbcsql17 unixodbc-dev \
     && apt-get clean
 
 WORKDIR /app
