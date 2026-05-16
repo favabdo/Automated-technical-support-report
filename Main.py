@@ -321,6 +321,12 @@ def analyze_chat(chat_history):
 async def health_check():
     return {"status": "alive"}
 
+@app.get("/drivers")
+async def check_drivers():
+    import subprocess
+    result = subprocess.run(['odbcinst', '-q', '-d'], capture_output=True, text=True)
+    return {"drivers": result.stdout, "errors": result.stderr}
+
 
 # ---------------- WEBHOOK ----------------
 @app.post("/webhook")
