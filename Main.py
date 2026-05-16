@@ -59,13 +59,13 @@ CEREBRAS_API_KEYS = [
 
 # ---------------- DATABASE CONFIG ----------------
 DB_CONN_STR = (
-    f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+    f"DRIVER={{ODBC Driver 18 for SQL Server}};"
     f"SERVER={os.getenv('DB_SERVER')};"
     f"DATABASE={os.getenv('DB_NAME')};"
     f"UID={os.getenv('DB_USER')};"
     f"PWD={os.getenv('DB_PASSWORD')};"
+    "TrustServerCertificate=yes;"
 )
-
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
