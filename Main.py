@@ -10,6 +10,7 @@ import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
 import pymssql
+import socket
 import os
 
 os.environ['PYTHONUNBUFFERED'] = '1'
@@ -52,6 +53,30 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_3"),
     os.getenv("CEREBRAS_KEY_4"),
 ]
+# ---------------- Test connection ----------------
+host = os.getenv("DB_SERVER")
+port = 1433
+
+try:
+    s = socket.socket()
+    s.settimeout(10)
+
+    print(f"Trying connection to {host}:{port} ...")
+
+    s.connect((host, port))
+
+    print("✅ TCP CONNECTION SUCCESS")
+
+except Exception as e:
+    print("❌ TCP CONNECTION FAILED:")
+    print(e)
+
+finally:
+    try:
+        s.close()
+    except:
+        pass
+
 
 # ---------------- DATABASE CONFIG ----------------
 DB_SERVER   = os.getenv("DB_SERVER")
