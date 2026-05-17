@@ -9,7 +9,7 @@ from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
-import pymssql
+import pyodbc
 import os
 
 os.environ['PYTHONUNBUFFERED'] = '1'
@@ -54,11 +54,14 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_4"),
 ]
 
-# ---------------- DATABASE CONFIG ----------------
-DB_SERVER   = os.getenv('DB_SERVER')
-DB_NAME     = os.getenv('DB_NAME')
-DB_USER     = os.getenv('DB_USER')
-DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_CONN_STR = (
+    f"DRIVER={{FreeTDS}};"
+    f"SERVER={os.getenv('DB_SERVER')};"
+    f"DATABASE={os.getenv('DB_NAME')};"
+    f"UID={os.getenv('DB_USER')};"
+    f"PWD={os.getenv('DB_PASSWORD')};"
+    f"TDS_Version=7.2;"
+)
 
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
@@ -67,7 +70,7 @@ CUSTOMER_TABLE = "customer_detail_by_A"
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = pyodbc.connect(DB_CONN_STR)
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -117,7 +120,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = pyodbc.connect(DB_CONN_STR)
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
@@ -138,12 +141,12 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = pyodbc.connect(DB_CONN_STR)
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
                 (customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
-            VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             customer_id,
             customer_name,
