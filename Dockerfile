@@ -10,15 +10,9 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # تسجيل FreeTDS كـ ODBC Driver
-RUN echo "[FreeTDS]\n\
-    Description = FreeTDS Driver\n\
-    Driver = /usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so\n\
-    Setup = /usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so" > /etc/odbcinst.ini
+RUN printf "[FreeTDS]\nDescription = FreeTDS Driver\nDriver = /usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so\nSetup = /usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so\n" > /etc/odbcinst.ini
 
-RUN echo "[nile-server]\n\
-    host = nile-server.com\n\
-    port = 1433\n\
-    tds version = 7.0" > /etc/freetds/freetds.conf
+RUN printf "[global]\ntds version = 7.2\n" > /etc/freetds/freetds.conf
 
 WORKDIR /app
 
