@@ -9,8 +9,10 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# تسجيل FreeTDS كـ ODBC Driver
-RUN printf "[FreeTDS]\nDescription = FreeTDS Driver\nDriver = /usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so\nSetup = /usr/lib/x86_64-linux-gnu/odbc/libtdsodbc.so\n" > /etc/odbcinst.ini
+# إيجاد المسار الصح وتسجيل FreeTDS
+RUN TDSODBC=$(find / -name "libtdsodbc.so" 2>/dev/null | head -1) && \
+    printf "[FreeTDS]\nDescription = FreeTDS Driver\nDriver = $TDSODBC\nSetup = $TDSODBC\n" > /etc/odbcinst.ini && \
+    cat /etc/odbcinst.ini
 
 RUN printf "[global]\ntds version = 7.2\n" > /etc/freetds/freetds.conf
 
