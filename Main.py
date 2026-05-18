@@ -58,7 +58,7 @@ DB_SERVER   = os.getenv("DB_SERVER")
 DB_NAME     = os.getenv("DB_NAME")
 DB_USER     = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = "1433"     # Default SQL Server port
+DB_PORT     = os.getenv("DB_PORT")
 
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
