@@ -9,8 +9,7 @@ from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
-import pymssql
-import socket
+import pyodbc
 import os
 
 os.environ['PYTHONUNBUFFERED'] = '1'
@@ -53,29 +52,7 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_3"),
     os.getenv("CEREBRAS_KEY_4"),
 ]
-# ---------------- Test connection ----------------
-host = os.getenv("DB_SERVER")
-port = 1433
 
-try:
-    s = socket.socket()
-    s.settimeout(10)
-
-    print(f"Trying connection to {host}:{port} ...")
-
-    s.connect((host, port))
-
-    print("✅ TCP CONNECTION SUCCESS")
-
-except Exception as e:
-    print("❌ TCP CONNECTION FAILED:")
-    print(e)
-
-finally:
-    try:
-        s.close()
-    except:
-        pass
 
 
 # ---------------- DATABASE CONFIG ----------------
@@ -88,10 +65,23 @@ TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
 
+# ---------------- DATABASE CONNECTION ----------------
+def get_db_connection():
+    return pyodbc.connect(
+        f"DRIVER={{ODBC Driver 18 for SQL Server}};"
+        f"SERVER={DB_SERVER};"
+        f"DATABASE={DB_NAME};"
+        f"UID={DB_USER};"
+        f"PWD={DB_PASSWORD};"
+        "TrustServerCertificate=yes;"
+        "Encrypt=no;"
+    )
+
+
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -141,19 +131,22 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
+
         cursor.execute(f"""
             IF NOT EXISTS (
-                SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = %d
+                SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = ?
             )
             BEGIN
                 INSERT INTO {CUSTOMER_TABLE} (customer_id, customer_name, customer_phone)
-                VALUES (%d, %s, %s)
+                VALUES (?, ?, ?)
             END
         """, (customer_id, customer_id, customer_name, customer_phone))
+
         conn.commit()
         conn.close()
+
         print(f"✅ Customer check done — id: {customer_id}")
     except Exception as e:
         print(f"❌ Customer save failed: {str(e)}")
@@ -162,12 +155,13 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME)
+        conn = get_db_connection()
         cursor = conn.cursor()
+
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
                 (customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
-            VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             customer_id,
             customer_name,
@@ -180,8 +174,10 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
             resolved_time,
             summary
         ))
+
         conn.commit()
         conn.close()
+
         print(f"✅ Record saved to DB — conv_id: {conv_id} | customer_id: {customer_id}")
     except Exception as e:
         print(f"❌ DB insert failed: {str(e)}")
