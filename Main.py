@@ -9,7 +9,7 @@ from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
 from datetime import datetime, timezone, timedelta
-import pyodbc
+import pymssql
 import os
 
 os.environ['PYTHONUNBUFFERED'] = '1'
@@ -18,7 +18,6 @@ sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', line_bufferin
 
 app = FastAPI()
 
-# تأكد من وجود الجدول عند بدء التشغيل
 @app.on_event("startup")
 async def startup_event():
     init_db()
@@ -54,14 +53,12 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_4"),
 ]
 
-DB_CONN_STR = (
-    f"DRIVER={{FreeTDS}};"
-    f"SERVER={os.getenv('DB_SERVER')};"
-    f"DATABASE={os.getenv('DB_NAME')};"
-    f"UID={os.getenv('DB_USER')};"
-    f"PWD={os.getenv('DB_PASSWORD')};"
-    f"DB_PORT={os.getenv('DB_PORT')};"
-)
+# ---------------- DATABASE CONFIG ----------------
+DB_SERVER   = os.getenv("DB_SERVER")
+DB_NAME     = os.getenv("DB_NAME")
+DB_USER     = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PORT     = os.getenv("DB_PORT")
 
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
@@ -70,7 +67,7 @@ CUSTOMER_TABLE = "customer_detail_by_A"
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pyodbc.connect(DB_CONN_STR)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT)
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -120,15 +117,15 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pyodbc.connect(DB_CONN_STR)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT)
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
-                SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = ?
+                SELECT 1 FROM {CUSTOMER_TABLE} WHERE customer_id = %d
             )
             BEGIN
                 INSERT INTO {CUSTOMER_TABLE} (customer_id, customer_name, customer_phone)
-                VALUES (?, ?, ?)
+                VALUES (%d, %s, %s)
             END
         """, (customer_id, customer_id, customer_name, customer_phone))
         conn.commit()
@@ -141,12 +138,12 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pyodbc.connect(DB_CONN_STR)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT)
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
                 (customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
         """, (
             customer_id,
             customer_name,
@@ -333,7 +330,6 @@ async def chatwoot_webhook(request: Request):
         agent_id       = payload.get("meta", {}).get("assignee", {}).get("id")
         agent_name     = payload.get("meta", {}).get("assignee", {}).get("name", "Unassigned")
 
-        # ---------------- DATE & TIME ----------------
         cairo_tz = timezone(timedelta(hours=3))
 
         resolved_at_raw = payload.get("resolved_at") or payload.get("updated_at")
@@ -389,7 +385,6 @@ async def chatwoot_webhook(request: Request):
                         if content:
                             full_chat_text += f"[{s_name}]: {content}\n"
 
-                    # ---------------- AI ----------------
                     ai_raw = analyze_chat(full_chat_text)
                     summary, classification = parse_ai_result(ai_raw)
 
@@ -397,14 +392,12 @@ async def chatwoot_webhook(request: Request):
                     print(fix_arabic_display(f"🏷️  التصنيف    : {classification}"))
                     print("="*50 + "\n")
 
-                    # ---------------- SAVE CUSTOMER ----------------
                     save_customer(
                         customer_id=customer_id,
                         customer_name=customer_name,
                         customer_phone=customer_phone
                     )
 
-                    # ---------------- SAVE TO DB ----------------
                     save_to_db(
                         customer_id=customer_id,
                         customer_name=customer_name,
