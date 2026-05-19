@@ -3,8 +3,6 @@ import uvicorn
 import requests
 import sys
 import io
-import arabic_reshaper
-from bidi.algorithm import get_display
 from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
@@ -182,7 +180,7 @@ If more than one issue has been resolved, write them all.
 You are receiving a chat from the ChatWoot platform.
 
 You MUST respond in EXACTLY this format — no extra text before or after:
-
+You are required to enter correct and fluent Arabic.
 الخلاصة: وصف تفصيلي للمشكلة بناءً على تاريخ المحادثة.
 التصنيف: تم حل مشكلة:ملخص المشكله / لم يتم حل مشكلة:ملخص المشكله / العميل لا يرد / سيتم التواصل مع العميل قريباً(من خلال كلام العميل او مهندس الدعم) / لم يتم تعريف مشكلة / لم يتم تعريف حل
 
@@ -350,10 +348,10 @@ async def chatwoot_webhook(request: Request):
         print("\n" + "="*50)
         print(fix_arabic_display("🎯 STATUS: RESOLVED"))
         print(f"🪪 Customer ID: {customer_id}")
-        print(f"{fix_arabic_display('👤 Customer')} : {fix_arabic_display(customer_name)}")
-        print(f"{fix_arabic_display('📞 Phone')}    : {customer_phone}")
+        print(f"👤 Customer : {customer_name}")
+        print(f"📞 Phone    : {customer_phone}")
         print(f"🪪 Agent ID  : {agent_id}")
-        print(f"{fix_arabic_display('👨‍💻 Agent')}    : {fix_arabic_display(agent_name)}")
+        print(f"👨‍💻 Agent    : {agent_name}")
         print(f"🆔 Conv ID   : {conv_id}")
         print(f"📅 Date      : {resolved_date}")
         print(f"🕐 Time      : {resolved_time}")
@@ -388,8 +386,8 @@ async def chatwoot_webhook(request: Request):
                     ai_raw = analyze_chat(full_chat_text)
                     summary, classification = parse_ai_result(ai_raw)
 
-                    print(fix_arabic_display(f"📋 الخلاصة    : {summary}"))
-                    print(fix_arabic_display(f"🏷️  التصنيف    : {classification}"))
+                    print(f"📋 الخلاصة    : {summary}")
+                    print(f"🏷️  التصنيف    : {classification}")
                     print("="*50 + "\n")
 
                     save_customer(
