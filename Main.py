@@ -3,8 +3,8 @@ import uvicorn
 import requests
 import sys
 import io
-import arabic_reshaper
-from bidi.algorithm import get_display
+
+
 from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
@@ -163,14 +163,7 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
         print(f"❌ DB insert failed: {str(e)}")
 
 
-# ---------------- ARABIC FIX ----------------
-def fix_arabic_display(text):
-    if not text:
-        return text
-    try:
-        return get_display(arabic_reshaper.reshape(text))
-    except:
-        return text
+
 
 
 # ---------------- PROMPT ----------------
@@ -349,12 +342,12 @@ async def chatwoot_webhook(request: Request):
         resolved_time = resolved_dt.strftime("%I:%M %p")
 
         print("\n" + "="*50)
-        print(fix_arabic_display("🎯 STATUS: RESOLVED"))
+        print(f"🎯 STATUS: RESOLVED")
         print(f"🪪 Customer ID: {customer_id}")
-        print(f"{fix_arabic_display('👤 Customer')} : {fix_arabic_display(customer_name)}")
-        print(f"{fix_arabic_display('📞 Phone')}    : {customer_phone}")
+        print(f"{'👤 Customer'} : {customer_name}")
+        print(f"{ '📞 Phone'}    : {customer_phone}")
         print(f"🪪 Agent ID  : {agent_id}")
-        print(f"{fix_arabic_display('👨‍💻 Agent')}    : {fix_arabic_display(agent_name)}")
+        print(f"{'👨‍💻 Agent'}    : {agent_name}")
         print(f"🆔 Conv ID   : {conv_id}")
         print(f"📅 Date      : {resolved_date}")
         print(f"🕐 Time      : {resolved_time}")
@@ -389,8 +382,8 @@ async def chatwoot_webhook(request: Request):
                     ai_raw = analyze_chat(full_chat_text)
                     summary, classification = parse_ai_result(ai_raw)
 
-                    print(fix_arabic_display(f"📋 الخلاصة    : {summary}"))
-                    print(fix_arabic_display(f"🏷️  التصنيف    : {classification}"))
+                    print(f"📋 الخلاصة    : {summary}")
+                    print(f"🏷️  التصنيف    : {classification}")
                     print("="*50 + "\n")
 
                     save_customer(
