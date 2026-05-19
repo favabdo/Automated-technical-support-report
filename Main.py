@@ -53,13 +53,33 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_4"),
 ]
 
+
+#----------------- TCP CONNECTION TEST ----------------
+import socket
+host =os.getenv("DB_SERVER")
+port = 1433
+try:
+    s = socket.socket()
+    s.settimeout(10)
+    print("Trying connection...")
+    s.connect((host, port))
+    print("✅ TCP CONNECTION SUCCESS")
+except Exception as e:
+    print("❌ TCP CONNECTION FAILED:")
+    print(e)
+finally:
+    try:
+        s.close()
+    except:
+        pass
 # ---------------- DATABASE CONFIG ----------------
+
 DB_SERVER   = os.getenv("DB_SERVER")
 DB_NAME     = os.getenv("DB_NAME")
 DB_USER     = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT     = os.getenv("DB_PORT")
-
+DB_PORT = int(os.getenv("DB_PORT", "1433"))
+ 
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
