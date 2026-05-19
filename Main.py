@@ -64,18 +64,10 @@ TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
 
-# ---------------- ARABIC ENCODING HELPER ----------------
-def u(text):
-    """تحويل النص العربي لـ bytes بـ CP1256 حتى يتخزن صح في SQL Server"""
-    if text is None:
-        return b""
-    return str(text).encode('utf-8').decode('cp1256', errors='replace').encode('cp1256')
-
-
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="CP1256")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version='4.2', charset='UTF-8')
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -125,7 +117,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="CP1256")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version='4.2', charset='UTF-8')
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
@@ -135,7 +127,7 @@ def save_customer(customer_id, customer_name, customer_phone):
                 INSERT INTO {CUSTOMER_TABLE} (customer_id, customer_name, customer_phone)
                 VALUES (%d, %s, %s)
             END
-        """, (customer_id, customer_id, u(customer_name), customer_phone))
+        """, (customer_id, customer_id, customer_name, customer_phone))
         conn.commit()
         conn.close()
         print(f"✅ Customer check done — id: {customer_id}")
@@ -146,7 +138,7 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="CP1256")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version='4.2', charset='UTF-8')
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
@@ -154,15 +146,15 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
             VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
         """, (
             customer_id,
-            u(customer_name),
+            customer_name,
             customer_phone,
-            u(classification),
+            classification,
             agent_id,
-            u(agent_name),
+            agent_name,
             str(conv_id),
             resolved_date,
             resolved_time,
-            u(summary)
+            summary
         ))
         conn.commit()
         conn.close()
@@ -190,15 +182,16 @@ If more than one issue has been resolved, write them all.
 You are receiving a chat from the ChatWoot platform.
 
 You MUST respond in EXACTLY this format — no extra text before or after:
-You are required to enter correct and fluent Arabic.
-الخلاصة: وصف تفصيلي للمشكلة بناءً على تاريخ المحادثة.
+الخلاصة: وصف تفصيلي للمشكلة بناءً على سجل المحادثه بين العميل ومسؤول خدمه العملاء .
 التصنيف: تم حل مشكلة:ملخص المشكله / لم يتم حل مشكلة:ملخص المشكله / العميل لا يرد / سيتم التواصل مع العميل قريباً(من خلال كلام العميل او مهندس الدعم) / لم يتم تعريف مشكلة / لم يتم تعريف حل
 
 Rules:
 - الخلاصة: must be a detailed description of the problem using the chat history (Never summarize welcome messages, agent assignments, or review or reopen conversations; instead, include only the actual transcript of the conversation between the client and the agent. Strive to be as concise as possible, but never compromise on accuracy, clarity, and comprehensiveness.).
-- التصنيف: pick the most accurate category based on the chat.
-- Always write in Arabic.
-- Do NOT add any extra lines or explanations outside the two lines above.
+- التصنيف: pick the most accurate category based on the chat .
+-The problem and its solution are always found in the last message from the agent.
+- Always write in Arabic and You must enter correct and fluent Arabic in summary and classification..
+- Do NOT add any extra lines or explanations outside the three lines above.
+
 
 Chat:
 {chat_history}
@@ -358,10 +351,10 @@ async def chatwoot_webhook(request: Request):
         print("\n" + "="*50)
         print(fix_arabic_display("🎯 STATUS: RESOLVED"))
         print(f"🪪 Customer ID: {customer_id}")
-        print(f"👤 Customer : {customer_name}")
-        print(f"📞 Phone    : {customer_phone}")
+        print(f"{fix_arabic_display('👤 Customer')} : {fix_arabic_display(customer_name)}")
+        print(f"{fix_arabic_display('📞 Phone')}    : {customer_phone}")
         print(f"🪪 Agent ID  : {agent_id}")
-        print(f"👨‍💻 Agent    : {agent_name}")
+        print(f"{fix_arabic_display('👨‍💻 Agent')}    : {fix_arabic_display(agent_name)}")
         print(f"🆔 Conv ID   : {conv_id}")
         print(f"📅 Date      : {resolved_date}")
         print(f"🕐 Time      : {resolved_time}")
@@ -396,8 +389,8 @@ async def chatwoot_webhook(request: Request):
                     ai_raw = analyze_chat(full_chat_text)
                     summary, classification = parse_ai_result(ai_raw)
 
-                    print(f"📋 الخلاصة    : {summary}")
-                    print(f"🏷️  التصنيف    : {classification}")
+                    print(fix_arabic_display(f"📋 الخلاصة    : {summary}"))
+                    print(fix_arabic_display(f"🏷️  التصنيف    : {classification}"))
                     print("="*50 + "\n")
 
                     save_customer(
