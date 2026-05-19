@@ -3,6 +3,8 @@ import uvicorn
 import requests
 import sys
 import io
+import arabic_reshaper
+from bidi.algorithm import get_display
 from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
@@ -61,17 +63,23 @@ DB_PORT     = int(os.getenv("DB_PORT", "1433"))
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
-# Arabic text display fix (if needed)
-def fix_sql_text(text):
-    if isinstance(text, str):
-        return text.encode('utf-8').decode('utf-8')
-    return text
+
+# ---------------- ENCODING HELPERS ----------------  ← تعديل
+def to_db_str(text):
+    if text is None:
+        return ""
+    return str(text).encode('utf-8').decode('latin-1')
+
+def from_db_str(text):
+    if text is None:
+        return ""
+    return str(text).encode('latin-1').decode('utf-8')
 
 
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2" ,charset="UTF-8")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2")
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -121,7 +129,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="UTF-8")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2")
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
@@ -131,7 +139,7 @@ def save_customer(customer_id, customer_name, customer_phone):
                 INSERT INTO {CUSTOMER_TABLE} (customer_id, customer_name, customer_phone)
                 VALUES (%d, %s, %s)
             END
-        """, (customer_id, customer_id, customer_name, customer_phone))
+        """, (customer_id, customer_id, to_db_str(customer_name), customer_phone))  # ← تعديل
         conn.commit()
         conn.close()
         print(f"✅ Customer check done — id: {customer_id}")
@@ -142,7 +150,7 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT,  tds_version="4.2", charset="UTF-8")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT,  tds_version="4.2")
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
@@ -150,15 +158,15 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
             VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
         """, (
             customer_id,
-            customer_name,
+            to_db_str(customer_name),       # ← تعديل
             customer_phone,
-            classification,
+            to_db_str(classification),      # ← تعديل
             agent_id,
-            agent_name,
+            to_db_str(agent_name),          # ← تعديل
             str(conv_id),
             resolved_date,
             resolved_time,
-            summary
+            to_db_str(summary)              # ← تعديل
         ))
         conn.commit()
         conn.close()
@@ -166,6 +174,15 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
     except Exception as e:
         print(f"❌ DB insert failed: {str(e)}")
 
+
+# ---------------- ARABIC FIX ----------------
+def fix_arabic_display(text):
+    if not text:
+        return text
+    try:
+        return get_display(arabic_reshaper.reshape(text))
+    except:
+        return text
 
 
 # ---------------- PROMPT ----------------
@@ -343,7 +360,7 @@ async def chatwoot_webhook(request: Request):
         resolved_time = resolved_dt.strftime("%I:%M %p")
 
         print("\n" + "="*50)
-        print(f"🎯 STATUS: RESOLVED")
+        print(fix_arabic_display("🎯 STATUS: RESOLVED"))
         print(f"🪪 Customer ID: {customer_id}")
         print(f"👤 Customer : {customer_name}")
         print(f"📞 Phone    : {customer_phone}")
@@ -389,21 +406,21 @@ async def chatwoot_webhook(request: Request):
 
                     save_customer(
                         customer_id=customer_id,
-                        customer_name = fix_sql_text(customer_name),
+                        customer_name=customer_name,
                         customer_phone=customer_phone
                     )
 
                     save_to_db(
                         customer_id=customer_id,
-                        customer_name = fix_sql_text(customer_name),
+                        customer_name=customer_name,
                         customer_phone=customer_phone,
-                        classification = fix_sql_text(classification),
+                        classification=classification,
                         agent_id=agent_id,
-                        agent_name = fix_sql_text(agent_name),
+                        agent_name=agent_name,
                         conv_id=conv_id,
                         resolved_date=resolved_date,
                         resolved_time=resolved_time,
-                        summary = fix_sql_text(summary)
+                        summary=summary
                     )
 
             else:
