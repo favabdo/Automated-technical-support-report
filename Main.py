@@ -64,22 +64,10 @@ TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
 
-# ---------------- ENCODING HELPERS ----------------  ← تعديل
-def to_db_str(text):
-    if text is None:
-        return ""
-    return str(text).encode('utf-8').decode('latin-1')
-
-def from_db_str(text):
-    if text is None:
-        return ""
-    return str(text).encode('latin-1').decode('utf-8')
-
-
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="UTF-8")
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -129,7 +117,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="UTF-8")
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
@@ -139,7 +127,7 @@ def save_customer(customer_id, customer_name, customer_phone):
                 INSERT INTO {CUSTOMER_TABLE} (customer_id, customer_name, customer_phone)
                 VALUES (%d, %s, %s)
             END
-        """, (customer_id, customer_id, to_db_str(customer_name), customer_phone))  # ← تعديل
+        """, (customer_id, customer_id, customer_name, customer_phone))
         conn.commit()
         conn.close()
         print(f"✅ Customer check done — id: {customer_id}")
@@ -150,7 +138,7 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT,  tds_version="4.2")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2", charset="UTF-8")
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
@@ -158,15 +146,15 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
             VALUES (%d, %s, %s, %s, %d, %s, %s, %d, %s, %s)
         """, (
             customer_id,
-            to_db_str(customer_name),       # ← تعديل
+            customer_name,
             customer_phone,
-            to_db_str(classification),      # ← تعديل
+            classification,
             agent_id,
-            to_db_str(agent_name),          # ← تعديل
+            agent_name,
             str(conv_id),
             resolved_date,
             resolved_time,
-            to_db_str(summary)              # ← تعديل
+            summary
         ))
         conn.commit()
         conn.close()
