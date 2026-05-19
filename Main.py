@@ -53,33 +53,13 @@ CEREBRAS_API_KEYS = [
     os.getenv("CEREBRAS_KEY_4"),
 ]
 
-
-#----------------- TCP CONNECTION TEST ----------------
-import socket
-host =os.getenv("DB_SERVER")
-port = 1433
-try:
-    s = socket.socket()
-    s.settimeout(10)
-    print("Trying connection...")
-    s.connect((host, port))
-    print("✅ TCP CONNECTION SUCCESS")
-except Exception as e:
-    print("❌ TCP CONNECTION FAILED:")
-    print(e)
-finally:
-    try:
-        s.close()
-    except:
-        pass
 # ---------------- DATABASE CONFIG ----------------
-
 DB_SERVER   = os.getenv("DB_SERVER")
 DB_NAME     = os.getenv("DB_NAME")
 DB_USER     = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
-DB_PORT = int(os.getenv("DB_PORT", "1433"))
- 
+DB_PORT     = int(os.getenv("DB_PORT", "1433"))
+
 TABLE_NAME     = "Customer_service_reports_by_A"
 CUSTOMER_TABLE = "customer_detail_by_A"
 
@@ -87,7 +67,7 @@ CUSTOMER_TABLE = "customer_detail_by_A"
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="7.1")
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -137,7 +117,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="7.1")
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
@@ -158,7 +138,7 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT)
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="7.1")
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
