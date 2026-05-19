@@ -67,7 +67,7 @@ CUSTOMER_TABLE = "customer_detail_by_A"
 # ---------------- CREATE TABLES IF NOT EXISTS ----------------
 def init_db():
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="7.3")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2")
         cursor = conn.cursor()
 
         cursor.execute(f"""
@@ -117,7 +117,7 @@ def init_db():
 # ---------------- SAVE CUSTOMER (مرة واحدة بس) ----------------
 def save_customer(customer_id, customer_name, customer_phone):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="7.3")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT, tds_version="4.2")
         cursor = conn.cursor()
         cursor.execute(f"""
             IF NOT EXISTS (
@@ -138,7 +138,7 @@ def save_customer(customer_id, customer_name, customer_phone):
 # ---------------- INSERT RECORD ----------------
 def save_to_db(customer_id, customer_name, customer_phone, classification, agent_id, agent_name, conv_id, resolved_date, resolved_time, summary):
     try:
-        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT,  tds_version="7.3")
+        conn = pymssql.connect(server=DB_SERVER, user=DB_USER, password=DB_PASSWORD, database=DB_NAME, port=DB_PORT,  tds_version="4.2")
         cursor = conn.cursor()
         cursor.execute(f"""
             INSERT INTO {TABLE_NAME}
