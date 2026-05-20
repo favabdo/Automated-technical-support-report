@@ -3,8 +3,6 @@ import uvicorn
 import requests
 import sys
 import io
-
-
 from groq import Groq
 import google.generativeai as genai
 from cerebras.cloud.sdk import Cerebras
@@ -175,16 +173,16 @@ If more than one issue has been resolved, write them all.
 You are receiving a chat from the ChatWoot platform.
 
 You MUST respond in EXACTLY this format — no extra text before or after:
-
-الخلاصة: وصف تفصيلي للمشكلة بناءً على آخر رساله من مسؤول الدعم في المحادثة.
-التصنيف: تم حل مشكلة:ملخص المشكله / لم يتم حل مشكلة:ملخص المشكله / العميل لا يرد / سيتم التواصل مع العميل قريباً(من خلال كلام العميل او مهندس الدعم) / لم يتم تعريف مشكلة / لم يتم تعريف حل
+الخلاصة: وصف تفصيلي للمشكلة بناءً على سجل المحادثه بين العميل وامسؤول خدمه العملاء .
+التصنيف(بناءا علي اخر رساله من مسؤول خدمه العملاء او اختصار ما طلبه العميل واكد بتنفيذه مسؤول خدمه العملاء): تم حل مشكلة:ملخص المشكله / لم يتم حل مشكلة:ملخص المشكله / العميل لا يرد / سيتم التواصل مع العميل قريباً(من خلال كلام العميل او مهندس الدعم) / لم يتم تعريف مشكلة / لم يتم تعريف حل
 
 Rules:
 - الخلاصة: must be a detailed description of the problem using the chat history (Never summarize welcome messages, agent assignments, or review or reopen conversations; instead, include only the actual transcript of the conversation between the client and the agent. Strive to be as concise as possible, but never compromise on accuracy, clarity, and comprehensiveness.).
-- التصنيف: pick the most accurate category based on the chat.
-- The problem and its solution are always found in the last message from the agent.
-- Always write in Arabic and You must enter correct and fluent Arabic in summary and classification.
+- التصنيف: pick the most accurate category based on the chat .
+-The problem and its solution are always found in the last message from the agent.
+- Always write in Arabic and You must enter correct and fluent Arabic in summary and classification..
 - Do NOT add any extra lines or explanations outside the three lines above.
+
 
 Chat:
 {chat_history}
