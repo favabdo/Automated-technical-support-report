@@ -166,22 +166,36 @@ def save_to_db(customer_id, customer_name, customer_phone, classification, agent
 
 # ---------------- PROMPT ----------------
 def build_prompt(chat_history):
-    return f"""
-You are a technical support assistant for monitoring the quality of solutions and the efficiency of the agent.
-If there are any spelling mistakes in the writing, you can overlook them. Just make sure the issue has been resolved or not.
-If more than one issue has been resolved, write them all.
-You are receiving a chat from the ChatWoot platform.
+    return f"""أنت مساعد متخصص في شركة مسؤولة عن تصنيف مشاكل العملاء على منصة ChatWoot إلى حالتين: "تم الحل" أو "لم يتم الحل".
+سيتم تزويدك بسجل محادثة بين العميل وممثل الدعم الفني. مهمتك هي تحليل المحادثة وإرجاع نتيجتين فقط:
 
-You MUST respond in EXACTLY this format — no extra text before or after:
-الخلاصة: وصف تفصيلي للمشكلة بناءً على سجل المحادثه بين العميل وامسؤول خدمه العملاء .
-التصنيف(بناءا علي اخر رساله من مسؤول خدمه العملاء او اختصار ما طلبه العميل واكد بتنفيذه مسؤول خدمه العملاء): تم حل مشكلة:ملخص المشكله / لم يتم حل مشكلة:ملخص المشكله / العميل لا يرد / سيتم التواصل مع العميل قريباً(من خلال كلام العميل او مهندس الدعم) / لم يتم تعريف مشكلة / لم يتم تعريف حل
+أولاً: التصنيف (Classification)
+يجب أن يكون مختصر جدًا وواضح.
+استند غالبًا إلى آخر رسالة من ممثل الدعم الفني قبل الإغلاق، مثل: "تم حل المشكلة"، "تم التنفيذ"، "تم الإجراء","تم عمل", "وهكذا".
+إذا لم توجد رسالة واضحة، استنتج من رد العميل (مثل الشكر أو التأكيد) ما إذا كانت المشكلة قد حُلّت أم لا وما هي المشكله.
+التصنيف يجب أن يكون واحدًا من:
+تم الحل(ذكر المشكله)
+لم يتم الحل(ذكر المشكله)
+سيتم التواصل مع العميل قريبا 
+تم التواصل مع العميل من رقم اخر 
+وهكذا بناءا علي ما ذكرناه سابقا
 
-Rules:
-- الخلاصة: must be a detailed description of the problem using the chat history (Never summarize welcome messages, agent assignments, or review or reopen conversations; instead, include only the actual transcript of the conversation between the client and the agent. Strive to be as concise as possible, but never compromise on accuracy, clarity, and comprehensiveness.).
-- التصنيف: pick the most accurate category based on the chat .
--The problem and its solution are always found in the last message from the agent.
-- Always write in Arabic and You must enter correct and fluent Arabic in summary and classification..
-- Do NOT add any extra lines or explanations outside the three lines above.
+ثانيًا: الملخص (Summary)
+اكتب ملخصًا قصيرًا لما حدث بين العميل وممثل الدعم فقط.
+لا تذكر رسائل الترحيب أو الرسائل النظامية أو أي ردود آلية من البوت.
+ركز فقط على المشكلة والحل أو الإجراء الذي تم اتخاذه.
+يجب أن يكون الملخص باللغة العربية الفصحى فقط وبأسلوب واضح ومختصر.
+الالتزام باللغه العربيه مطلوب بشكل صارم وغير مسموح بتجاوزه.
+
+قواعد مهمة جدًا:
+يجب أن يكون الإخراج بالكامل باللغة العربية الفصحى فقط.
+ممنوع استخدام أي أحرف أو كلمات غير عربية نهائيًا.
+لا تضف أي شرح إضافي أو تعليقات خارج "التصنيف" و"الملخص".
+الالتزام بالصيغة مطلوب بشكل صارم.
+
+صيغة الإخراج المطلوبة:
+التصنيف: ...
+الملخص: ...
 
 
 Chat:
