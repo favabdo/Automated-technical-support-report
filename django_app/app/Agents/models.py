@@ -13,9 +13,9 @@ class UserProfile(models.Model):
     ]
 
     user           = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
-    agent_id       = models.CharField(max_length=50, unique=True)
+    phone_number   = models.CharField(max_length=20, unique=True)
     role           = models.CharField(max_length=20, choices=ROLE_CHOICES, default='agent')
     is_first_login = models.BooleanField(default=True)
 
     def __str__(self):
-        return f"{self.user.username} — {self.role} — ID: {self.agent_id}"
+        return f"{self.user.username} — {self.role}"

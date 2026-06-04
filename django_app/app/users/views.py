@@ -21,7 +21,6 @@ def is_manager_level(user):
 
 def can_change_role(changer, target_role):
     changer_role = get_role(changer)
-    # Developer لا يغير Owner والعكس
     protected = {'developer': ['owner'], 'owner': ['developer']}
     if changer_role in protected and target_role in protected[changer_role]:
         return False
@@ -30,6 +29,9 @@ def can_change_role(changer, target_role):
 
 # ---------------- LOGIN ----------------
 def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('home')
+
     if request.method == 'POST':
         action = request.POST.get('action')
 
@@ -41,19 +43,19 @@ def login_view(request):
                 visitor_user.save()
                 UserProfile.objects.create(
                     user=visitor_user,
-                    phone_number='0000000000',
+                    agent_id='visitor',
                     role='visitor',
                     is_first_login=False
                 )
             login(request, visitor_user)
             return redirect('home')
 
-        # دخول عادي برقم التلفون
-        phone    = request.POST.get('phone')
-        password = request.POST.get('password')
+        # دخول بالـ agent_id والباسورد
+        agent_id = request.POST.get('agent_id', '').strip()
+        password = request.POST.get('password', '').strip()
 
         try:
-            profile = UserProfile.objects.get(phone_number=phone)
+            profile = UserProfile.objects.get(agent_id=agent_id)
             user = authenticate(request, username=profile.user.username, password=password)
             if user:
                 login(request, user)
@@ -61,26 +63,33 @@ def login_view(request):
                     return redirect('change_password')
                 return redirect('home')
             else:
-                messages.error(request, 'رقم الهاتف أو كلمة المرور غير صحيحة')
+                messages.error(request, 'الـ ID أو كلمة المرور غير صحيحة')
         except UserProfile.DoesNotExist:
-            messages.error(request, 'رقم الهاتف غير مسجل')
+            messages.error(request, 'هذا الـ ID غير مسجل')
 
     return render(request, 'users/login.html')
 
 
-# ---------------- CHANGE PASSWORD (أول دخول) ----------------
+# ---------------- CHANGE PASSWORD (أول دخول - إجباري) ----------------
 @login_required
 def change_password(request):
     if request.method == 'POST':
-        new_password  = request.POST.get('new_password')
-        confirm       = request.POST.get('confirm_password')
+        new_password     = request.POST.get('new_password', '').strip()
+        confirm_password = request.POST.get('confirm_password', '').strip()
+        new_email        = request.POST.get('email', '').strip()  # اختياري
 
-        if new_password != confirm:
-            messages.error(request, 'كلمات المرور غير متطابقة')
+        if not new_password:
+            messages.error(request, 'كلمة المرور مطلوبة')
+        elif new_password == request.user.profile.agent_id:
+            messages.error(request, 'كلمة المرور الجديدة لا يمكن أن تكون نفس الـ ID')
         elif len(new_password) < 6:
             messages.error(request, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+        elif new_password != confirm_password:
+            messages.error(request, 'كلمتا المرور غير متطابقتين')
         else:
             request.user.set_password(new_password)
+            if new_email:
+                request.user.email = new_email
             request.user.save()
             request.user.profile.is_first_login = False
             request.user.profile.save()
@@ -94,13 +103,48 @@ def change_password(request):
 # ---------------- PROFILE ----------------
 @login_required
 def profile(request):
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        # تغيير الإيميل
+        if action == 'change_email':
+            new_email = request.POST.get('new_email', '').strip()
+            if new_email:
+                request.user.email = new_email
+                request.user.save()
+                messages.success(request, 'تم تحديث البريد الإلكتروني')
+            else:
+                messages.error(request, 'يرجى إدخال بريد إلكتروني صحيح')
+
+        # تغيير الباسورد
+        elif action == 'change_password':
+            old_password     = request.POST.get('old_password', '')
+            new_password     = request.POST.get('new_password', '').strip()
+            confirm_password = request.POST.get('confirm_password', '').strip()
+
+            if not request.user.check_password(old_password):
+                messages.error(request, 'كلمة المرور الحالية غير صحيحة')
+            elif new_password == request.user.profile.agent_id:
+                messages.error(request, 'كلمة المرور لا يمكن أن تكون نفس الـ ID')
+            elif len(new_password) < 6:
+                messages.error(request, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل')
+            elif new_password != confirm_password:
+                messages.error(request, 'كلمتا المرور غير متطابقتين')
+            else:
+                request.user.set_password(new_password)
+                request.user.save()
+                update_session_auth_hash(request, request.user)
+                messages.success(request, 'تم تغيير كلمة المرور بنجاح')
+
+        return redirect('profile')
+
     return render(request, 'users/profile.html', {
-        'role': get_role(request.user),
+        'role':       get_role(request.user),
         'is_manager': is_manager_level(request.user),
     })
 
 
-# ---------------- MANAGE USERS (developer/owner فقط) ----------------
+# ---------------- MANAGE USERS ----------------
 @login_required
 def manage_users(request):
     if not is_high_level(request.user):
@@ -109,32 +153,32 @@ def manage_users(request):
     profiles = UserProfile.objects.select_related('user').exclude(role='visitor')
 
     if request.method == 'POST':
-        # إضافة مستخدم جديد
-        phone    = request.POST.get('phone')
-        name     = request.POST.get('name')
-        role     = request.POST.get('role')
+        agent_id = request.POST.get('agent_id', '').strip()
+        name     = request.POST.get('name', '').strip()
+        role     = request.POST.get('role', 'agent')
 
-        if UserProfile.objects.filter(phone_number=phone).exists():
-            messages.error(request, 'رقم الهاتف مسجل بالفعل')
+        if not agent_id or not name:
+            messages.error(request, 'الاسم والـ ID مطلوبان')
+        elif UserProfile.objects.filter(agent_id=agent_id).exists():
+            messages.error(request, 'هذا الـ ID مسجل بالفعل')
         else:
-            # الباسورد = آخر 5 أرقام من التلفون
-            password = phone[-5:]
-            username = phone
-            user = User.objects.create_user(username=username, password=password)
-            user.get_full_name = lambda: name
-            user.first_name = name
-            user.save()
+            # username = agent_id، باسورد افتراضي = agent_id
+            user = User.objects.create_user(
+                username=agent_id,
+                password=agent_id,
+                first_name=name
+            )
             UserProfile.objects.create(
                 user=user,
-                phone_number=phone,
+                agent_id=agent_id,
                 role=role,
                 is_first_login=True
             )
-            messages.success(request, f'تم إضافة {name} — الباسورد: {password}')
+            messages.success(request, f'تم إضافة {name} — ID: {agent_id} — الباسورد الافتراضي: {agent_id}')
 
     return render(request, 'users/manage.html', {
-        'profiles': profiles,
-        'is_manager': True,
+        'profiles':     profiles,
+        'is_manager':   True,
         'role_choices': UserProfile.ROLE_CHOICES,
     })
 

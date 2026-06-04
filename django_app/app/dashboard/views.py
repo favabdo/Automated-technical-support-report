@@ -1,11 +1,6 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from db_connection import get_connection
-from datetime import date
-
-
-def is_manager(user):
-    return user.groups.filter(name='manager').exists() or user.is_superuser
+from db_connection import get_connection, is_manager_level
 
 
 @login_required
@@ -13,7 +8,6 @@ def home(request):
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
 
-    # فلتر التاريخ من الـ Navbar
     date_from = request.GET.get('from', '')
     date_to   = request.GET.get('to', '')
 
@@ -23,9 +17,9 @@ def home(request):
     if date_to:
         where += f" AND resolved_date <= {date_to.replace('-', '')}"
 
-    # لو مش مدير يشوف بتاعته بس
-    if not is_manager(request.user):
-        where += f" AND agent_name = '{request.user.get_full_name() or request.user.username}'"
+    # لو agent يشوف بتاعته بس
+    if not is_manager_level(request.user):
+        where += f" AND agent_name = '{request.user.first_name or request.user.username}'"
 
     # ---------------- إحصائيات عامة ----------------
     cursor.execute(f"SELECT COUNT(*) AS total FROM Customer_service_reports_by_A {where}")
@@ -46,25 +40,28 @@ def home(request):
     cursor.execute("SELECT COUNT(*) AS total FROM customer_detail_by_A")
     total_customers = cursor.fetchone()['total']
 
-    # ---------------- Most Active Agents ----------------
+    # ---------------- أكتر أيجنت حل (bar chart) ----------------
     cursor.execute(f"""
         SELECT TOP 5 agent_name, COUNT(*) AS total
-        FROM Customer_service_reports_by_A {where}
+        FROM Customer_service_reports_by_A
+        {where} AND classification LIKE N'تم%'
         GROUP BY agent_name
         ORDER BY total DESC
     """)
-    active_agents = cursor.fetchall()
+    top_agents_resolved = cursor.fetchall()
 
-    # ---------------- Most Customers per Agent ----------------
+    # ---------------- أكتر عميل تواصل ----------------
     cursor.execute(f"""
-        SELECT TOP 5 agent_name, COUNT(DISTINCT customer_id) AS total
-        FROM Customer_service_reports_by_A {where}
-        GROUP BY agent_name
+        SELECT TOP 5 c.customer_name, COUNT(r.conv_id) AS total
+        FROM Customer_service_reports_by_A r
+        JOIN customer_detail_by_A c ON r.customer_id = c.customer_id
+        {where.replace('WHERE 1=1', 'WHERE 1=1')}
+        GROUP BY c.customer_name
         ORDER BY total DESC
     """)
-    agents_customers = cursor.fetchall()
+    top_customers = cursor.fetchall()
 
-    # ---------------- Most Common Problems ----------------
+    # ---------------- أكتر مشكلة اتكررت ----------------
     cursor.execute(f"""
         SELECT TOP 5 classification, COUNT(*) AS total
         FROM Customer_service_reports_by_A {where}
@@ -75,15 +72,20 @@ def home(request):
 
     conn.close()
 
+    resolved_pct   = round((total_resolved   / total_reports * 100), 1) if total_reports else 0
+    unresolved_pct = round((total_unresolved / total_reports * 100), 1) if total_reports else 0
+
     return render(request, 'dashboard/home.html', {
-        'total_reports':    total_reports,
-        'total_resolved':   total_resolved,
-        'total_unresolved': total_unresolved,
-        'total_customers':  total_customers,
-        'active_agents':    active_agents,
-        'agents_customers': agents_customers,
-        'common_problems':  common_problems,
-        'is_manager':       is_manager(request.user),
-        'date_from':        date_from,
-        'date_to':          date_to,
+        'total_reports':      total_reports,
+        'total_resolved':     total_resolved,
+        'total_unresolved':   total_unresolved,
+        'total_customers':    total_customers,
+        'resolved_pct':       resolved_pct,
+        'unresolved_pct':     unresolved_pct,
+        'top_agents_resolved': top_agents_resolved,
+        'top_customers':      top_customers,
+        'common_problems':    common_problems,
+        'is_manager':         is_manager_level(request.user),
+        'date_from':          date_from,
+        'date_to':            date_to,
     })
