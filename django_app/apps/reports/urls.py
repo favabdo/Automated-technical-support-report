@@ -9,12 +9,3 @@ urlpatterns = [
     path('customers/<int:customer_id>/', views.customer_detail, name='customer_detail'),
     path('monthly/', views.monthly, name='monthly'),
 ]
-
-
-from django.urls import path
-from . import views
-
-urlpatterns = [
-    path('',         views.reports_list, name='reports_list'),
-    path('monthly/', views.monthly,      name='monthly'),
-]
