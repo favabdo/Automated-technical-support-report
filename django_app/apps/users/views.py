@@ -43,7 +43,7 @@ def login_view(request):
             profile, profile_created = UserProfile.objects.get_or_create(
                 user=visitor_user,
                 defaults={
-                    'phone_number': '0000000000',
+                    'agent_id': '0000000000',
                     'role': 'visitor',
                     'is_first_login': False,
                 }
