@@ -17,10 +17,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
    'rest_framework',       
-    'apps.Agents.apps.AgentsConfig',
-    'apps.Customers.apps.CustomersConfig',
-    'apps.Reports.apps.ReportsConfig',
-    'apps.Dashboard.apps.DashboardConfig',      
+    'apps.agents.apps.AgentsConfig',
+    'apps.customers.apps.CustomersConfig',
+    'apps.reports.apps.ReportsConfig',
+    'apps.dashboard.apps.DashboardConfig',      
 ]
 
 MIDDLEWARE = [
