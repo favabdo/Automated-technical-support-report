@@ -98,7 +98,8 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 6px;
             background: rgba(255, 255, 255, 0.1);
-            color: white;
+            color: #1a1a2e;
+            background: rgba(255, 255, 255, 0.9);
             font-family: 'Cairo', sans-serif;
             font-size: 12px;
             outline: none;
@@ -606,12 +607,7 @@
 
             <div class="bell">🔔</div>
 
-            <div class="navbar-user">
-                <div class="user-avatar">{% if request.user.first_name %}{{ request.user.first_name|first|upper }}{%
-                    else %}{{ request.user.username|first|upper }}{% endif %}</div>
-                <span>{% if request.user.first_name %}{{ request.user.first_name|first|upper }}{% else %}{{
-                    request.user.username|first|upper }}{% endif %}</span>
-            </div>
+
         </div>
     </nav>
 
