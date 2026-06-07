@@ -15,6 +15,12 @@ def reports_list(request):
 
     if get_role(request.user) == 'visitor':
         data = FAKE_REPORTS
+        if date_from:
+            date_from_int = int(date_from.replace('-', ''))
+            data = [r for r in data if r['resolved_date'] >= date_from_int]
+        if date_to:
+            date_to_int = int(date_to.replace('-', ''))
+            data = [r for r in data if r['resolved_date'] <= date_to_int]
         if agent_filter:
             data = [r for r in data if r['agent_name'] == agent_filter]
         if class_filter:
@@ -24,7 +30,6 @@ def reports_list(request):
             'data': data, 'agents': agents, 'is_manager': True,
             'filters': {'agent': agent_filter, 'from': date_from, 'to': date_to, 'classification': class_filter},
         })
-
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
 
@@ -93,3 +98,5 @@ def monthly(request):
         'selected_month': month, 'selected_year': year,
         'is_manager': is_manager_level(request.user),
     })
+
+    

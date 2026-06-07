@@ -1,11 +1,16 @@
+from urllib import request
+
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+from httpx import request
 from db_connection import get_connection, is_manager_level, get_role
 from visitor_data import FAKE_CUSTOMERS, FAKE_CUSTOMER_REPORTS
 
-
 @login_required
 def customers_list(request):
+    date_from = request.GET.get('from', '')
+    date_to   = request.GET.get('to', '')
+    search    = request.GET.get('search', '')
     if get_role(request.user) != 'visitor' and not is_manager_level(request.user):
         return redirect('home')
 
@@ -13,10 +18,17 @@ def customers_list(request):
 
     if get_role(request.user) == 'visitor':
         customers = FAKE_CUSTOMERS
+        if date_from:
+            date_from_int = int(date_from.replace('-', ''))
+            customers = [c for c in customers if c.get('resolved_date', 99999999) >= date_from_int]
+        if date_to:
+            date_to_int = int(date_to.replace('-', ''))
+            customers = [c for c in customers if c.get('resolved_date', 0) <= date_to_int]
         if search:
             customers = [c for c in customers if search in c['customer_name'] or search in c['customer_phone']]
         return render(request, 'customers/index.html', {
-            'customers': customers, 'search': search, 'is_manager': True,
+            'customers': customers, 'is_manager': True,
+            'search': search, 'date_from': date_from, 'date_to': date_to,
         })
 
     conn = get_connection()

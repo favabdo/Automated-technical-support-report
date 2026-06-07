@@ -12,13 +12,18 @@ def agents_list(request):
 
     if get_role(request.user) == 'visitor':
         agents = FAKE_AGENTS
+        if date_from:
+            date_from_int = int(date_from.replace('-', ''))
+            agents = [a for a in agents if a.get('resolved_date', 99999999) >= date_from_int]
+        if date_to:
+            date_to_int = int(date_to.replace('-', ''))
+            agents = [a for a in agents if a.get('resolved_date', 0) <= date_to_int]
         if search:
             agents = [a for a in agents if search in a['agent_name']]
         return render(request, 'agents/index.html', {
             'agents': agents, 'is_manager': True,
             'search': search, 'date_from': date_from, 'date_to': date_to,
         })
-
     conn = get_connection()
     cursor = conn.cursor(as_dict=True)
 
