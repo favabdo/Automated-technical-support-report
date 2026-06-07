@@ -4,12 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nile Techno
-        Technical Support Reports</title>
+    <title>{% block title %}Nile Techno Technical Support Reports{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         :root {
+            --surface: #ffffff;
+            --border: rgba(0, 0, 0, 0.08);
+            --green: #10b981;
+            --red: #ef4444;
+            --yellow: #f59e0b;
             --primary: #0a192f;
             --accent: #00b4d8;
             --accent2: #0077b6;
@@ -577,6 +582,7 @@
             border-color: var(--accent);
         }
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 
 <body>
