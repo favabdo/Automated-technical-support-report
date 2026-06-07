@@ -607,9 +607,10 @@
             <div class="bell">🔔</div>
 
             <div class="navbar-user">
-                <div class="user-avatar">{{
-                    request.user.first_name|first|upper|default:request.user.username|first|upper }}</div>
-                <span>{{ request.user.first_name|default:request.user.username }}</span>
+                <div class="user-avatar">{% if request.user.first_name %}{{ request.user.first_name|first|upper }}{%
+                    else %}{{ request.user.username|first|upper }}{% endif %}</div>
+                <span>{% if request.user.first_name %}{{ request.user.first_name|first|upper }}{% else %}{{
+                    request.user.username|first|upper }}{% endif %}</span>
             </div>
         </div>
     </nav>
