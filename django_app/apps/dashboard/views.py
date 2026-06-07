@@ -2,7 +2,6 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from db_connection import get_connection, is_manager_level, get_role
 from visitor_data import FAKE_STATS
-import calendar
 from datetime import date
 
 
@@ -13,11 +12,23 @@ def home(request):
 
     # Visitor → بيانات وهمية
     if get_role(request.user) == 'visitor':
+        fake = FAKE_STATS.copy()
+        total = fake['total_reports']
+        resolved = fake['total_resolved']
+        unresolved = fake['total_unresolved']
         return render(request, 'dashboard/home.html', {
-            **FAKE_STATS,
-            'is_manager': True,
-            'date_from':  date_from,
-            'date_to':    date_to,
+            'total_reports':       total,
+            'total_resolved':      resolved,
+            'total_unresolved':    unresolved,
+            'total_customers':     fake['total_customers'],
+            'top_agents_resolved': fake['active_agents'],
+            'top_customers':       fake['agents_customers'],
+            'common_problems':     fake['common_problems'],
+            'resolved_pct':        round(resolved / total * 100) if total else 0,
+            'unresolved_pct':      round(unresolved / total * 100) if total else 0,
+            'is_manager':          True,
+            'date_from':           date_from,
+            'date_to':             date_to,
         })
 
     conn = get_connection()
@@ -48,14 +59,14 @@ def home(request):
         FROM Customer_service_reports_by_A {where}
         GROUP BY agent_name ORDER BY total DESC
     """)
-    active_agents = cursor.fetchall()
+    top_agents_resolved = cursor.fetchall()
 
     cursor.execute(f"""
-        SELECT TOP 5 agent_name, COUNT(DISTINCT customer_id) AS total
+        SELECT TOP 5 customer_name, COUNT(*) AS total
         FROM Customer_service_reports_by_A {where}
-        GROUP BY agent_name ORDER BY total DESC
+        GROUP BY customer_name ORDER BY total DESC
     """)
-    agents_customers = cursor.fetchall()
+    top_customers = cursor.fetchall()
 
     cursor.execute(f"""
         SELECT TOP 5 classification, COUNT(*) AS total
@@ -65,15 +76,20 @@ def home(request):
     common_problems = cursor.fetchall()
     conn.close()
 
+    resolved_pct   = round(total_resolved / total_reports * 100) if total_reports else 0
+    unresolved_pct = round(total_unresolved / total_reports * 100) if total_reports else 0
+
     return render(request, 'dashboard/home.html', {
-        'total_reports':    total_reports,
-        'total_resolved':   total_resolved,
-        'total_unresolved': total_unresolved,
-        'total_customers':  total_customers,
-        'active_agents':    active_agents,
-        'agents_customers': agents_customers,
-        'common_problems':  common_problems,
-        'is_manager':       is_manager_level(request.user),
-        'date_from':        date_from,
-        'date_to':          date_to,
+        'total_reports':       total_reports,
+        'total_resolved':      total_resolved,
+        'total_unresolved':    total_unresolved,
+        'total_customers':     total_customers,
+        'top_agents_resolved': top_agents_resolved,
+        'top_customers':       top_customers,
+        'common_problems':     common_problems,
+        'resolved_pct':        resolved_pct,
+        'unresolved_pct':      unresolved_pct,
+        'is_manager':          is_manager_level(request.user),
+        'date_from':           date_from,
+        'date_to':             date_to,
     })
