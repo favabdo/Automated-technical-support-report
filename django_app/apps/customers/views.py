@@ -1,8 +1,6 @@
 from urllib import request
-
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
-from httpx import request
 from db_connection import get_connection, is_manager_level, get_role
 from visitor_data import FAKE_CUSTOMERS, FAKE_CUSTOMER_REPORTS
 
