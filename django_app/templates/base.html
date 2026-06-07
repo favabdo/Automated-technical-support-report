@@ -591,7 +591,8 @@
     <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
         <div class="navbar-right">
-            <div class="navbar-logo">🏢</div>
+            {% load static %}
+            <img src="{% static 'images/NTLogo.png' %}" height="40" style="object-fit:contain;">
             <div class="navbar-company">Nile Techno — Technical Support</div>
         </div>
 

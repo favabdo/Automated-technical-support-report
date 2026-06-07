@@ -185,10 +185,11 @@
 </head>
 
 <body>
+  {% load static %}
   <div class="login-box">
     <div class="login-logo">
       <div class="icon">
-        <img src="NTLogo.png" alt="Logo">
+        <img src="{% static 'images/NTLogo.png' %}" style="width:120px; object-fit:contain; margin-bottom:8px;">
       </div>
       <h1>Nile Techno</h1>
       <p>سجّل دخولك للمتابعة</p>
