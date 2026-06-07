@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 
@@ -6,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Nile Techno Technical Support Reports{% endblock %}</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -41,7 +43,6 @@
             color: var(--text);
         }
 
-        /* ===== NAVBAR ===== */
         .navbar {
             position: fixed;
             top: 0;
@@ -63,12 +64,6 @@
             gap: 20px;
         }
 
-        .navbar-logo {
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--accent);
-        }
-
         .navbar-company {
             font-size: 14px;
             color: rgba(255, 255, 255, 0.8);
@@ -81,7 +76,6 @@
             gap: 16px;
         }
 
-        /* Date Filter */
         .date-filter {
             display: flex;
             align-items: center;
@@ -97,9 +91,8 @@
             padding: 6px 10px;
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            color: #1a1a2e;
             background: rgba(255, 255, 255, 0.9);
+            color: #1a1a2e;
             font-family: 'Cairo', sans-serif;
             font-size: 12px;
             outline: none;
@@ -121,36 +114,12 @@
             cursor: pointer;
         }
 
-        /* Bell */
         .bell {
             font-size: 20px;
             cursor: pointer;
             color: rgba(255, 255, 255, 0.7);
         }
 
-        /* User */
-        .navbar-user {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 13px;
-        }
-
-        .user-avatar {
-            width: 32px;
-            height: 32px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 13px;
-            color: white;
-        }
-
-        /* ===== SIDEBAR ===== */
         .sidebar {
             position: fixed;
             top: var(--navbar-h);
@@ -215,7 +184,6 @@
             background: rgba(239, 68, 68, 0.3);
         }
 
-        /* ===== MAIN ===== */
         .main {
             margin-right: var(--sidebar-w);
             margin-top: var(--navbar-h);
@@ -223,7 +191,6 @@
             min-height: calc(100vh - var(--navbar-h));
         }
 
-        /* ===== PAGE HEADER ===== */
         .page-header {
             margin-bottom: 24px;
         }
@@ -240,7 +207,6 @@
             margin-top: 4px;
         }
 
-        /* ===== STAT CARDS ===== */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -288,7 +254,6 @@
             opacity: 0.12;
         }
 
-        /* ===== CHARTS GRID ===== */
         .charts-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -311,7 +276,6 @@
             margin-bottom: 16px;
         }
 
-        /* ===== TABLE ===== */
         .table-card {
             background: var(--card);
             border-radius: 14px;
@@ -364,7 +328,6 @@
             background: #f8fafc;
         }
 
-        /* ===== BADGES ===== */
         .badge {
             display: inline-block;
             padding: 3px 10px;
@@ -393,7 +356,6 @@
             color: var(--accent);
         }
 
-        /* ===== CARDS GRID (Agents/Customers) ===== */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -481,7 +443,6 @@
             background: rgba(0, 180, 216, 0.15);
         }
 
-        /* ===== SEARCH ===== */
         .search-bar {
             background: var(--card);
             border-radius: 14px;
@@ -528,7 +489,6 @@
             background: var(--accent2);
         }
 
-        /* ===== EMPTY STATE ===== */
         .empty-state {
             text-align: center;
             padding: 48px;
@@ -540,7 +500,6 @@
             margin-bottom: 12px;
         }
 
-        /* ===== FILTERS ===== */
         .filters {
             background: var(--card);
             border-radius: 14px;
@@ -588,38 +547,30 @@
 
 <body>
 
-    <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
         <div class="navbar-right">
-            {% load static %}
             <img src="{% static 'images/NTLogo.png' %}" height="40" style="object-fit:contain;">
             <div class="navbar-company">Nile Techno — Technical Support</div>
         </div>
-
         <div class="navbar-left">
-            <!-- Date Filter -->
             <form method="get" class="date-filter" id="dateFilterForm">
                 <label>من</label>
                 <input type="date" name="from" value="{{ date_from }}">
                 <label>إلى</label>
                 <input type="date" name="to" value="{{ date_to }}">
                 <button type="submit" class="btn-filter">تصفية</button>
-                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">{%
-                endif%}
+                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">
+                {% endif%}
                 {% if request.GET.agent %}<input type="hidden" name="agent" value="{{ request.GET.agent }}">{% endif %}
                 {% if request.GET.classification %}<input type="hidden" name="classification"
                     value="{{ request.GET.classification }}">{% endif %}
                 {% if request.GET.month %}<input type="hidden" name="month" value="{{ request.GET.month }}">{% endif %}
                 {% if request.GET.year %}<input type="hidden" name="year" value="{{ request.GET.year }}">{% endif %}
             </form>
-
             <div class="bell">🔔</div>
-
-
         </div>
     </nav>
 
-    <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar">
         <nav class="sidebar-nav">
             <a href="/" class="nav-item {% block nav_home %}{% endblock %}">
@@ -638,13 +589,11 @@
                 <span class="icon">👤</span> البروفايل
             </a>
         </nav>
-
         <div class="sidebar-footer">
             <a href="/users/logout/" class="logout-btn">تسجيل الخروج</a>
         </div>
     </aside>
 
-    <!-- ===== MAIN ===== -->
     <main class="main">
         {% block content %}{% endblock %}
     </main>
