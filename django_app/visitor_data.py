@@ -53,6 +53,13 @@ FAKE_STATS = {
     'total_resolved':   130,
     'total_unresolved': 32,
     'total_customers':  6,
+    'top_customers': [
+    {'customer_name': 'شركة النيل',    'total': 12},
+    {'customer_name': 'مؤسسة الأهرام', 'total': 9},
+    {'customer_name': 'مجموعة الفجر',  'total': 7},
+    {'customer_name': 'شركة الوادي',   'total': 5},
+    {'customer_name': 'مؤسسة الدلتا',  'total': 4},
+                    ],
     'active_agents':    FAKE_AGENTS[:5],
     'agents_customers': [
         {'agent_name': 'أحمد محمد', 'total': 18},
