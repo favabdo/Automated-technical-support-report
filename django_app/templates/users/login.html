@@ -23,7 +23,7 @@
       justify-content: flex-end;
       background: #040f1e;
       color: #e0f0ff;
-      overflow: hidden;
+      overflow-x: hidden;
     }
 
     .bg {
@@ -38,31 +38,37 @@
       position: absolute;
       inset: 0;
       background: linear-gradient(to left,
-          rgba(3, 10, 25, 0.85) 0%,
-          rgba(3, 10, 25, 0.68) 40%,
-          rgba(3, 10, 25, 0.08) 68%,
+          rgba(3, 10, 25, 0.88) 0%,
+          rgba(3, 10, 25, 0.70) 42%,
+          rgba(3, 10, 25, 0.10) 70%,
           rgba(3, 10, 25, 0.0) 100%);
     }
 
+    /* ── Card wrapper: centers card vertically, hugs left edge ── */
     .card-wrap {
       position: relative;
       z-index: 10;
       display: flex;
       align-items: center;
-      height: 100vh;
-      padding-left: 6vw;
+      justify-content: flex-end;
+      min-height: 100vh;
+      width: 100%;
+      padding: 20px clamp(16px, 5vw, 60px);
     }
 
+    /* ── Card: fluid width with min/max ── */
     .card {
-      width: 355px;
-      background: rgba(4, 14, 32, 0.60);
+      width: min(380px, 90vw);
+      background: rgba(4, 14, 32, 0.62);
       border: 1px solid rgba(0, 185, 220, 0.22);
-      border-radius: 22px;
-      padding: 36px 32px 28px;
+      border-radius: clamp(14px, 3vw, 22px);
+      padding: clamp(22px, 4vw, 38px) clamp(18px, 4vw, 34px) clamp(18px, 3vw, 30px);
       position: relative;
       backdrop-filter: blur(24px) saturate(1.6);
       -webkit-backdrop-filter: blur(24px) saturate(1.6);
-      box-shadow: 0 0 0 1px rgba(0, 200, 230, 0.06) inset, 0 28px 65px rgba(0, 0, 0, 0.65), 0 0 40px rgba(10, 80, 180, 0.12);
+      box-shadow: 0 0 0 1px rgba(0, 200, 230, 0.06) inset,
+        0 28px 65px rgba(0, 0, 0, 0.65),
+        0 0 40px rgba(10, 80, 180, 0.12);
     }
 
     .card::before {
@@ -75,13 +81,19 @@
       background: linear-gradient(90deg, transparent, rgba(0, 210, 240, 0.7), transparent);
     }
 
+    /* ── Logo ── */
     .logo {
       text-align: center;
-      margin-bottom: 22px
+      margin-bottom: clamp(14px, 3vw, 22px)
+    }
+
+    .logo img {
+      width: clamp(80px, 20vw, 115px);
+      filter: drop-shadow(0 0 10px rgba(0, 200, 230, 0.35))
     }
 
     .logo-text {
-      font-size: 24px;
+      font-size: clamp(18px, 4vw, 24px);
       font-weight: 800;
       letter-spacing: 1px
     }
@@ -91,19 +103,20 @@
     }
 
     .logo p {
-      font-size: 9.5px;
+      font-size: clamp(8px, 1.8vw, 9.5px);
       color: rgba(120, 175, 210, 0.48);
       margin-top: 4px;
-      letter-spacing: .09em;
-      text-transform: uppercase
+      letter-spacing: .07em;
+      text-transform: uppercase;
     }
 
+    /* ── Section title ── */
     .sec-title {
       text-align: center;
-      font-size: 13px;
+      font-size: clamp(12px, 2.5vw, 14px);
       font-weight: 700;
       color: rgba(200, 230, 255, 0.8);
-      margin-bottom: 20px;
+      margin-bottom: clamp(14px, 3vw, 20px);
       position: relative;
     }
 
@@ -125,16 +138,17 @@
       left: 0
     }
 
+    /* ── Fields ── */
     .field {
-      margin-bottom: 13px
+      margin-bottom: clamp(10px, 2.5vw, 13px)
     }
 
     .field label {
       display: block;
-      font-size: 11.5px;
+      font-size: clamp(11px, 2vw, 12px);
       font-weight: 600;
       color: rgba(120, 175, 210, 0.75);
-      margin-bottom: 6px
+      margin-bottom: 6px;
     }
 
     .wrap {
@@ -148,18 +162,18 @@
       transform: translateY(-50%);
       color: rgba(90, 150, 195, 0.55);
       font-size: 13px;
-      pointer-events: none
+      pointer-events: none;
     }
 
     .wrap input {
       width: 100%;
-      padding: 10px 36px 10px 12px;
+      padding: clamp(8px, 2vw, 10px) 36px clamp(8px, 2vw, 10px) 12px;
       background: rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(0, 165, 205, 0.22);
       border-radius: 9px;
       color: #e0f0ff;
       font-family: 'Cairo', sans-serif;
-      font-size: 14px;
+      font-size: clamp(13px, 2.5vw, 14px);
       outline: none;
       transition: border-color .2s, box-shadow .2s;
     }
@@ -173,15 +187,16 @@
       box-shadow: 0 0 0 3px rgba(0, 200, 230, 0.09)
     }
 
+    /* ── Buttons ── */
     .btn-main {
       width: 100%;
-      padding: 11px;
+      padding: clamp(9px, 2.5vw, 11px);
       border-radius: 9px;
       border: none;
       background: linear-gradient(135deg, #0a6abf 0%, #053d7a 100%);
       color: #fff;
       font-family: 'Cairo', sans-serif;
-      font-size: 14px;
+      font-size: clamp(13px, 2.5vw, 14px);
       font-weight: 700;
       cursor: pointer;
       margin-top: 4px;
@@ -202,7 +217,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin: 12px 0;
+      margin: clamp(8px, 2vw, 12px) 0;
       color: rgba(100, 145, 175, 0.4);
       font-size: 11px
     }
@@ -217,13 +232,13 @@
 
     .btn-sec {
       width: 100%;
-      padding: 9px;
+      padding: clamp(8px, 2vw, 9px);
       border-radius: 9px;
       background: rgba(50, 200, 110, 0.07);
       border: 1px solid rgba(50, 200, 110, 0.22);
       color: #6de89a;
       font-family: 'Cairo', sans-serif;
-      font-size: 13px;
+      font-size: clamp(12px, 2.5vw, 13px);
       cursor: pointer;
       transition: all .2s;
     }
@@ -235,22 +250,23 @@
 
     .foot {
       text-align: center;
-      margin-top: 16px;
-      font-size: 10px;
-      color: rgba(90, 130, 160, 0.28)
+      margin-top: clamp(12px, 2.5vw, 16px);
+      font-size: clamp(9px, 1.8vw, 10px);
+      color: rgba(90, 130, 160, 0.40)
     }
 
+    /* ── Lang button ── */
     .lang-btn {
       position: absolute;
-      top: 14px;
-      left: 14px;
+      top: 12px;
+      left: 12px;
       background: rgba(0, 185, 220, 0.12);
       border: 1px solid rgba(0, 185, 220, 0.3);
       color: rgba(180, 225, 240, 0.85);
       font-family: 'Cairo', sans-serif;
-      font-size: 11px;
+      font-size: clamp(10px, 1.8vw, 11px);
       font-weight: 700;
-      padding: 5px 12px;
+      padding: 4px 10px;
       border-radius: 20px;
       cursor: pointer;
       transition: all .2s;
@@ -261,6 +277,34 @@
     .lang-btn:hover {
       background: rgba(0, 185, 220, 0.22);
       border-color: rgba(0, 185, 220, 0.55)
+    }
+
+    /* ══ MOBILE: card goes center ══ */
+    @media(max-width:600px) {
+      body {
+        justify-content: center
+      }
+
+      .card-wrap {
+        justify-content: center;
+        align-items: center;
+        padding: 16px
+      }
+
+      .card {
+        width: min(360px, 92vw)
+      }
+
+      .bg::after {
+        background: rgba(3, 10, 25, 0.72)
+      }
+    }
+
+    /* ══ TABLET: card stays right but slightly wider ══ */
+    @media(min-width:601px) and (max-width:1024px) {
+      .card {
+        width: min(400px, 52vw)
+      }
     }
   </style>
 </head>
