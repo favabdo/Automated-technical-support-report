@@ -150,10 +150,13 @@ def generate_visitor_data():
     }
 
 
+import json
+
 def get_visitor_data(request):
-    if 'visitor_seed' not in request.session:
-        request.session['visitor_seed'] = random.randint(1, 999999)
+    if 'visitor_data' not in request.session:
+        data = generate_visitor_data()
+        # نحول الداتا لـ JSON ونحفظها في الـ session
+        request.session['visitor_data'] = json.dumps(data, default=str)
         request.session.modified = True
     
-    random.seed(request.session['visitor_seed'])
-    return generate_visitor_data()
+    return json.loads(request.session['visitor_data'])
