@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from db_connection import get_connection, is_manager_level, get_role
-from visitor_data import FAKE_STATS
+from visitor_data import get_visitor_data
 from datetime import date
 
 
@@ -12,20 +12,17 @@ def home(request):
 
     # Visitor → بيانات وهمية
     if get_role(request.user) == 'visitor':
-        fake = FAKE_STATS.copy()
-        total = fake['total_reports']
-        resolved = fake['total_resolved']
-        unresolved = fake['total_unresolved']
+        vdata = get_visitor_data(request)
         return render(request, 'dashboard/home.html', {
-            'total_reports':       total,
-            'total_resolved':      resolved,
-            'total_unresolved':    unresolved,
-            'total_customers':     fake['total_customers'],
-            'top_agents_resolved': fake['active_agents'],
-            'top_customers':       fake['agents_customers'],
-            'common_problems':     fake['common_problems'],
-            'resolved_pct':        round(resolved / total * 100) if total else 0,
-            'unresolved_pct':      round(unresolved / total * 100) if total else 0,
+            'total_reports':       vdata['total_reports'],
+            'total_resolved':      vdata['total_resolved'],
+            'total_unresolved':    vdata['total_unresolved'],
+            'total_customers':     vdata['total_customers'],
+            'top_agents_resolved': vdata['top_agents_resolved'],
+            'top_customers':       vdata['top_customers'],
+            'common_problems':     vdata['common_problems'],
+            'resolved_pct':        vdata['resolved_pct'],
+            'unresolved_pct':      vdata['unresolved_pct'],
             'is_manager':          True,
             'date_from':           date_from,
             'date_to':             date_to,
