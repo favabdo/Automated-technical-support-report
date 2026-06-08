@@ -930,8 +930,8 @@
                     <i class="fa-solid fa-filter"></i>
                     <span data-ar="تصفية" data-en="Filter">تصفية</span>
                 </button>
-                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">{% endif
-                %}
+                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">
+                {% endif%}
                 {% if request.GET.agent %}<input type="hidden" name="agent" value="{{ request.GET.agent }}">{% endif %}
                 {% if request.GET.classification %}<input type="hidden" name="classification"
                     value="{{ request.GET.classification }}">{% endif %}
