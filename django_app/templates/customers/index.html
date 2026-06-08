@@ -134,3 +134,15 @@
 </div>
 {% endif %}
 {% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelector('input[name="search"]').addEventListener('input', function () {
+        const val = this.value.toLowerCase();
+        document.querySelectorAll('.customer-card').forEach(card => {
+            const name = card.querySelector('.name').textContent.toLowerCase();
+            card.style.display = name.includes(val) ? 'block' : 'none';
+        });
+    });
+</script>
+{% endblock %}

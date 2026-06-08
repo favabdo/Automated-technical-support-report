@@ -555,9 +555,9 @@
         <div class="navbar-left">
             <form method="get" class="date-filter" id="dateFilterForm">
                 <label>من</label>
-                <input type="date" name="from" value="{{ date_from }}">
+                <input type="date" name="from" value="{{ request.GET.from }}">
                 <label>إلى</label>
-                <input type="date" name="to" value="{{ date_to }}">
+                <input type="date" name="to" value="{{ request.GET.to }}">
                 <button type="submit" class="btn-filter">تصفية</button>
                 {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">
                 {% endif%}
