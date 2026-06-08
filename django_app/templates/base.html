@@ -38,6 +38,20 @@
             --navbar-h: 60px;
         }
 
+        /* ===== LIGHT MODE ===== */
+        body.light-mode {
+            --bg: #f0f4f8;
+            --bg2: #ffffff;
+            --surface: #ffffff;
+            --surface2: #f0f4f8;
+            --border: rgba(0, 0, 0, 0.08);
+            --border2: rgba(0, 0, 0, 0.14);
+            --text: #0f172a;
+            --muted: #64748b;
+            --blue-glow: rgba(37, 99, 235, 0.10);
+            --green-glow: rgba(34, 197, 94, 0.10);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -49,6 +63,7 @@
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
+            transition: background 0.25s, color 0.25s;
         }
 
         /* ===== SIDEBAR ===== */
@@ -56,6 +71,7 @@
             position: fixed;
             top: 0;
             left: 0;
+            /* ✅ على الشمال زي الصورة */
             width: var(--sidebar-w);
             height: 100vh;
             background: var(--bg2);
@@ -63,6 +79,7 @@
             display: flex;
             flex-direction: column;
             z-index: 100;
+            transition: background 0.25s, border-color 0.25s;
         }
 
         .sidebar-logo {
@@ -134,6 +151,10 @@
             border: 1px solid rgba(37, 99, 235, 0.25);
         }
 
+        body.light-mode .nav-item.active {
+            color: #1d4ed8;
+        }
+
         .nav-item.active i {
             color: #60a5fa;
         }
@@ -179,6 +200,7 @@
             position: fixed;
             top: 0;
             left: var(--sidebar-w);
+            /* ✅ بعد السايدبار على الشمال */
             right: 0;
             height: var(--navbar-h);
             background: var(--bg2);
@@ -188,6 +210,7 @@
             justify-content: space-between;
             padding: 0 24px;
             z-index: 200;
+            transition: background 0.25s, border-color 0.25s;
         }
 
         .navbar-left {
@@ -237,6 +260,10 @@
             color-scheme: dark;
         }
 
+        body.light-mode .date-filter input {
+            color-scheme: light;
+        }
+
         .date-filter input:focus {
             border-color: var(--blue);
         }
@@ -281,6 +308,27 @@
         .lang-btn:hover {
             border-color: var(--blue);
             color: #93c5fd;
+        }
+
+        /* ===== THEME TOGGLE BTN ===== */
+        .theme-btn {
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 15px;
+            transition: all 0.18s;
+        }
+
+        .theme-btn:hover {
+            border-color: var(--blue);
+            color: #f59e0b;
         }
 
         /* Bell */
@@ -422,6 +470,7 @@
         /* ===== MAIN ===== */
         .main {
             margin-left: var(--sidebar-w);
+            /* ✅ على الشمال زي الصورة */
             margin-top: var(--navbar-h);
             padding: 24px;
             min-height: calc(100vh - var(--navbar-h));
@@ -474,7 +523,7 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            transition: border-color 0.18s;
+            transition: border-color 0.18s, background 0.25s;
         }
 
         .stat-card:hover {
@@ -505,7 +554,6 @@
             line-height: 1;
         }
 
-        /* compat */
         .stat-label {
             font-size: 11px;
             color: var(--muted);
@@ -535,6 +583,7 @@
             border-radius: 12px;
             padding: 18px 20px;
             border: 1px solid var(--border);
+            transition: background 0.25s;
         }
 
         .chart-card h3 {
@@ -570,6 +619,7 @@
             border: 1px solid var(--border);
             overflow: hidden;
             margin-bottom: 20px;
+            transition: background 0.25s;
         }
 
         .table-header {
@@ -650,6 +700,22 @@
             border: 1px solid rgba(37, 99, 235, 0.2);
         }
 
+        body.light-mode .badge-success {
+            color: #16a34a;
+        }
+
+        body.light-mode .badge-danger {
+            color: #dc2626;
+        }
+
+        body.light-mode .badge-warning {
+            color: #d97706;
+        }
+
+        body.light-mode .badge-info {
+            color: #1d4ed8;
+        }
+
         /* ===== CARDS ===== */
         .cards-grid {
             display: grid;
@@ -662,7 +728,7 @@
             border-radius: 12px;
             padding: 18px;
             border: 1px solid var(--border);
-            transition: border-color 0.18s;
+            transition: border-color 0.18s, background 0.25s;
         }
 
         .person-card:hover {
@@ -739,6 +805,10 @@
             font-weight: 600;
             transition: all 0.18s;
             border: 1px solid rgba(37, 99, 235, 0.2);
+        }
+
+        body.light-mode .view-more-btn {
+            color: #1d4ed8;
         }
 
         .view-more-btn:hover {
@@ -824,6 +894,12 @@
             color-scheme: dark;
         }
 
+        body.light-mode select,
+        body.light-mode input[type="date"],
+        body.light-mode input[type="text"] {
+            color-scheme: light;
+        }
+
         select:focus,
         input:focus {
             border-color: var(--blue);
@@ -881,7 +957,7 @@
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar">
         <div class="sidebar-logo">
-            <img src="{% static 'NTLogo3.png' %}" alt="NT">
+            <img src="{% static 'images/NTLogo3.png' %}" alt="NT">
             <div class="sidebar-logo-text">Nile Techno<br>Reports</div>
         </div>
 
@@ -930,8 +1006,8 @@
                     <i class="fa-solid fa-filter"></i>
                     <span data-ar="تصفية" data-en="Filter">تصفية</span>
                 </button>
-                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">
-                {% endif%}
+                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">{% endif
+                %}
                 {% if request.GET.agent %}<input type="hidden" name="agent" value="{{ request.GET.agent }}">{% endif %}
                 {% if request.GET.classification %}<input type="hidden" name="classification"
                     value="{{ request.GET.classification }}">{% endif %}
@@ -942,6 +1018,11 @@
             <button class="lang-btn" onclick="toggleLang()">
                 <i class="fa-solid fa-globe"></i>
                 <span id="langLabel">EN</span>
+            </button>
+
+            <!-- ✅ زرار الـ light/dark mode -->
+            <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير المظهر">
+                <i class="fa-solid fa-sun" id="themeIcon"></i>
             </button>
 
             <div class="bell-btn">
@@ -982,16 +1063,14 @@
     {% block extra_js %}{% endblock %}
 
     <script>
+        /* ===== LANG ===== */
         let currentLang = localStorage.getItem('ntLang') || 'ar';
 
         function applyLang(lang) {
-            const html = document.getElementById('html-root');
             if (lang === 'en') {
-                html.dir = 'ltr'; html.lang = 'en';
                 document.getElementById('langLabel').textContent = 'AR';
                 document.querySelectorAll('[data-en]').forEach(el => el.textContent = el.getAttribute('data-en'));
             } else {
-                html.dir = 'rtl'; html.lang = 'ar';
                 document.getElementById('langLabel').textContent = 'EN';
                 document.querySelectorAll('[data-ar]').forEach(el => el.textContent = el.getAttribute('data-ar'));
             }
@@ -1001,6 +1080,25 @@
 
         function toggleLang() { applyLang(currentLang === 'ar' ? 'en' : 'ar'); }
         applyLang(currentLang);
+
+        /* ===== THEME ===== */
+        let currentTheme = localStorage.getItem('ntTheme') || 'dark';
+
+        function applyTheme(theme) {
+            const icon = document.getElementById('themeIcon');
+            if (theme === 'light') {
+                document.body.classList.add('light-mode');
+                icon.className = 'fa-solid fa-moon';
+            } else {
+                document.body.classList.remove('light-mode');
+                icon.className = 'fa-solid fa-sun';
+            }
+            localStorage.setItem('ntTheme', theme);
+            currentTheme = theme;
+        }
+
+        function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
+        applyTheme(currentTheme);
     </script>
 </body>
 
