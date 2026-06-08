@@ -42,6 +42,22 @@
       opacity: 1;
     }
 
+    .bg-slide:nth-child(1) {
+      background: url("{% static 'images/login.jpg' %}") center center / cover no-repeat;
+    }
+
+    .bg-slide:nth-child(2) {
+      background: url("{% static 'images/login2.jpg' %}") center center / cover no-repeat;
+    }
+
+    .bg-slide:nth-child(3) {
+      background: url("{% static 'images/login3.jpg' %}") center center / cover no-repeat;
+    }
+
+    .bg-slide:nth-child(4) {
+      background: url("{% static 'images/login4.jpg' %}") center center / cover no-repeat;
+    }
+
     .bg-slide::after {
       content: '';
       position: absolute;
@@ -356,15 +372,7 @@
   <!-- ── Ripple canvas ── -->
   <canvas id="ripple-canvas"></canvas>
 
-  {% static 'images/login.jpg' as bg1 %}
-  {% static 'images/login2.jpg' as bg2 %}
-  {% static 'images/login3.jpg' as bg3 %}
-  {% static 'images/login4.jpg' as bg4 %}
 
-  <div class="bg-slide active" style="background-image: url('{{ bg1 }}')"></div>
-  <div class="bg-slide" style="background-image: url('{{ bg2 }}')"></div>
-  <div class="bg-slide" style="background-image: url('{{ bg3 }}')"></div>
-  <div class="bg-slide" style="background-image: url('{{ bg4 }}')"></div>
 
   <!-- ── Dots ── -->
   <div class="slide-dots">
