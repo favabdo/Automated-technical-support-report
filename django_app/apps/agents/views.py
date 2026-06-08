@@ -1,7 +1,9 @@
+from urllib import request
+
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from db_connection import get_connection, is_manager_level, get_role
-from visitor_data import FAKE_AGENTS, FAKE_AGENT_REPORTS
+from visitor_data import get_visitor_data
 
 
 @login_required
@@ -11,13 +13,8 @@ def agents_list(request):
     search    = request.GET.get('search', '')
 
     if get_role(request.user) == 'visitor':
-        agents = FAKE_AGENTS
-        if date_from:
-            date_from_int = int(date_from.replace('-', ''))
-            agents = [a for a in agents if a.get('resolved_date', 99999999) >= date_from_int]
-        if date_to:
-            date_to_int = int(date_to.replace('-', ''))
-            agents = [a for a in agents if a.get('resolved_date', 0) <= date_to_int]
+        vdata = get_visitor_data(request)
+        agents = vdata['agents']
         if search:
             agents = [a for a in agents if search in a['agent_name']]
         return render(request, 'agents/index.html', {
@@ -59,8 +56,15 @@ def agent_detail(request, agent_id):
     date_to   = request.GET.get('to', '')
 
     if get_role(request.user) == 'visitor':
-        agent_reports = FAKE_AGENT_REPORTS.get(agent_id, [])
-        agent = next((a for a in FAKE_AGENTS if a['agent_id'] == agent_id), None)
+        vdata = get_visitor_data(request)
+        agent = next((a for a in vdata['agents'] if a['agent_id'] == agent_id), None)
+        agent_reports = [r for r in vdata['reports'] if r['agent_id'] == agent_id]
+        if date_from:
+            date_from_int = int(date_from.replace('-', ''))
+            agent_reports = [r for r in agent_reports if r['resolved_date'] >= date_from_int]
+        if date_to:
+            date_to_int = int(date_to.replace('-', ''))
+            agent_reports = [r for r in agent_reports if r['resolved_date'] <= date_to_int]
         return render(request, 'agents/detail.html', {
             'agent': agent, 'reports': agent_reports,
             'is_manager': True, 'date_from': date_from, 'date_to': date_to,

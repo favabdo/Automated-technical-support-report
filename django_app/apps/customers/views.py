@@ -2,7 +2,7 @@ from urllib import request
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from db_connection import get_connection, is_manager_level, get_role
-from visitor_data import FAKE_CUSTOMERS, FAKE_CUSTOMER_REPORTS
+from visitor_data import get_visitor_data
 
 @login_required
 def customers_list(request):
@@ -15,18 +15,13 @@ def customers_list(request):
     search = request.GET.get('search', '')
 
     if get_role(request.user) == 'visitor':
-        customers = FAKE_CUSTOMERS
-        if date_from:
-            date_from_int = int(date_from.replace('-', ''))
-            customers = [c for c in customers if c.get('resolved_date', 99999999) >= date_from_int]
-        if date_to:
-            date_to_int = int(date_to.replace('-', ''))
-            customers = [c for c in customers if c.get('resolved_date', 0) <= date_to_int]
+        vdata = get_visitor_data(request)
+        customers = vdata['customers']
         if search:
             customers = [c for c in customers if search in c['customer_name'] or search in c['customer_phone']]
         return render(request, 'customers/index.html', {
-            'customers': customers, 'is_manager': True,
-            'search': search, 'date_from': date_from, 'date_to': date_to,
+            'customers': customers, 'search': search, 'is_manager': True,
+            'date_from': date_from, 'date_to': date_to,
         })
 
     conn = get_connection()
@@ -59,8 +54,9 @@ def customer_detail(request, customer_id):
         return redirect('home')
 
     if get_role(request.user) == 'visitor':
-        customer = next((c for c in FAKE_CUSTOMERS if c['customer_id'] == customer_id), None)
-        reports = FAKE_CUSTOMER_REPORTS.get(customer_id, [])
+        vdata = get_visitor_data(request)
+        customer = next((c for c in vdata['customers'] if c['customer_id'] == customer_id), None)
+        reports = [r for r in vdata['reports'] if r['customer_name'] == customer['customer_name']]
         return render(request, 'customers/detail.html', {
             'customer': customer, 'reports': reports, 'is_manager': True,
         })

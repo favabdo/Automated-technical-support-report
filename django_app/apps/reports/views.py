@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from db_connection import get_connection, is_manager_level, get_role
-from visitor_data import FAKE_REPORTS, FAKE_MONTHLY, FAKE_AGENTS
+from visitor_data import get_visitor_data
 import calendar
 from datetime import date
 
@@ -12,9 +12,9 @@ def reports_list(request):
     date_to      = request.GET.get('to', '')
     agent_filter = request.GET.get('agent', '')
     class_filter = request.GET.get('classification', '')
-
     if get_role(request.user) == 'visitor':
-        data = FAKE_REPORTS
+        vdata = get_visitor_data(request)
+        data = vdata['reports']
         if date_from:
             date_from_int = int(date_from.replace('-', ''))
             data = [r for r in data if r['resolved_date'] >= date_from_int]
@@ -25,7 +25,7 @@ def reports_list(request):
             data = [r for r in data if r['agent_name'] == agent_filter]
         if class_filter:
             data = [r for r in data if class_filter in r['classification']]
-        agents = list(set(r['agent_name'] for r in FAKE_REPORTS))
+        agents = list(set(r['agent_name'] for r in vdata['reports']))
         return render(request, 'reports/list.html', {
             'data': data, 'agents': agents, 'is_manager': True,
             'filters': {'agent': agent_filter, 'from': date_from, 'to': date_to, 'classification': class_filter},
