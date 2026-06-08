@@ -151,9 +151,9 @@ def generate_visitor_data():
 
 
 def get_visitor_data(request):
-    """بتولد داتا ثابتة للـ session ومختلفة لكل session جديد"""
     if 'visitor_seed' not in request.session:
         request.session['visitor_seed'] = random.randint(1, 999999)
+        request.session.modified = True
     
     random.seed(request.session['visitor_seed'])
     return generate_visitor_data()
