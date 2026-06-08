@@ -20,7 +20,7 @@
       min-height: 100vh;
       display: flex;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: flex-end;
       background: #040f1e;
       color: #e0f0ff;
       overflow: hidden;
@@ -37,7 +37,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(to right,
+      background: linear-gradient(to left,
           rgba(3, 10, 25, 0.85) 0%,
           rgba(3, 10, 25, 0.68) 40%,
           rgba(3, 10, 25, 0.08) 68%,
@@ -50,7 +50,7 @@
       display: flex;
       align-items: center;
       height: 100vh;
-      padding-right: 6vw;
+      padding-left: 6vw;
     }
 
     .card {
@@ -239,57 +239,123 @@
       font-size: 10px;
       color: rgba(90, 130, 160, 0.28)
     }
+
+    .lang-btn {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(0, 185, 220, 0.12);
+      border: 1px solid rgba(0, 185, 220, 0.3);
+      color: rgba(180, 225, 240, 0.85);
+      font-family: 'Cairo', sans-serif;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all .2s;
+      letter-spacing: .04em;
+      z-index: 20;
+    }
+
+    .lang-btn:hover {
+      background: rgba(0, 185, 220, 0.22);
+      border-color: rgba(0, 185, 220, 0.55)
+    }
   </style>
 </head>
 
 <body>
+  {% load static %}
   <div class="bg"></div>
   <div class="card-wrap">
     <div class="card">
+      <button class="lang-btn" onclick="toggleLang()" id="langBtn">عربي</button>
       <div class="logo">
         <img src="{% static 'images/NTLogo.png' %}"
           style="width:115px;filter:drop-shadow(0 0 10px rgba(0,200,230,0.35))">
-        <p>Enterprise Resource Planning System</p>
+        <p id="tagline">Let us Manage Your Business</p>
       </div>
+      <div class="sec-title" id="secTitle">Sign In</div>
       {% if messages %}{% for msg in messages %}
       <div
         style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#fca5a5;border-radius:9px;padding:10px 13px;font-size:13px;margin-bottom:12px;display:flex;align-items:center;gap:8px;">
         <i class="fa-solid fa-circle-xmark"></i> {{ msg }}
       </div>
       {% endfor %}{% endif %}
-      <div class="sec-title">تسجيل الدخول</div>
       <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="login">
         <div class="field">
-          <label>الـ ID الخاص بك</label>
+          <label id="idLabel">Your ID</label>
           <div class="wrap">
             <i class="fa-solid fa-id-badge"></i>
-            {% csrf_token %}
-            <input type="hidden" name="action" value="login">
-            <input type="text" name="agent_id" placeholder="أدخل الـ ID" required autofocus>
+            <input type="text" name="agent_id" id="idInput" placeholder="Enter your ID" required autofocus>
           </div>
         </div>
         <div class="field">
-          <label>كلمة المرور</label>
+          <label id="passLabel">Password</label>
           <div class="wrap">
             <i class="fa-solid fa-lock"></i>
-            <input type="password" name="password" placeholder="••••••••" required>
+            <input type="password" name="password" id="passInput" placeholder="••••••••" required>
           </div>
         </div>
         <button type="submit" class="btn-main">
-          <i class="fa-solid fa-right-to-bracket"></i>&nbsp; دخول
+          <i class="fa-solid fa-right-to-bracket"></i>&nbsp; <span id="loginText">Login</span>
         </button>
       </form>
-      <div class="or">أو</div>
+      <div class="or" id="orText">or</div>
       <form method="post">
         {% csrf_token %}
         <input type="hidden" name="action" value="visitor">
         <button type="submit" class="btn-sec">
-          <i class="fa-solid fa-eye"></i>&nbsp; دخول كزائر
+          <i class="fa-solid fa-eye"></i>&nbsp; <span id="visitorText">Continue as Guest</span>
         </button>
       </form>
       <p class="foot">© 2026 Nile Techno — All rights reserved</p>
     </div>
   </div>
+
+  <script>
+    const t = {
+      en: {
+        btn: 'عربي', dir: 'ltr', tagline: 'Let us Manage Your Business',
+        title: 'Sign In', idLabel: 'Your ID', idPh: 'Enter your ID',
+        passLabel: 'Password', passPh: '••••••••',
+        login: 'Login', or: 'or', visitor: 'Continue as Guest'
+      },
+      ar: {
+        btn: 'English', dir: 'rtl', tagline: 'دعنا ندير أعمالك',
+        title: 'تسجيل الدخول', idLabel: 'الـ ID الخاص بك', idPh: 'أدخل الـ ID',
+        passLabel: 'كلمة المرور', passPh: '••••••••',
+        login: 'دخول', or: 'أو', visitor: 'دخول كزائر'
+      }
+    };
+    let lang = 'en';
+    function toggleLang() {
+      lang = lang === 'en' ? 'ar' : 'en';
+      const d = t[lang];
+      document.getElementById('langBtn').textContent = d.btn;
+      document.getElementById('tagline').textContent = d.tagline;
+      document.getElementById('secTitle').textContent = d.title;
+      document.getElementById('idLabel').textContent = d.idLabel;
+      document.getElementById('idInput').placeholder = d.idPh;
+      document.getElementById('passLabel').textContent = d.passLabel;
+      document.getElementById('passInput').placeholder = d.passPh;
+      document.getElementById('loginText').textContent = d.login;
+      document.getElementById('orText').textContent = d.or;
+      document.getElementById('visitorText').textContent = d.visitor;
+      document.querySelector('.card').style.direction = d.dir;
+      document.querySelector('.card').style.textAlign = lang === 'ar' ? 'right' : 'left';
+      document.querySelectorAll('.wrap i').forEach(i => {
+        i.style.right = lang === 'ar' ? '12px' : 'auto';
+        i.style.left = lang === 'ar' ? 'auto' : '12px';
+      });
+      document.querySelectorAll('.wrap input').forEach(inp => {
+        inp.style.padding = lang === 'ar' ? '10px 36px 10px 12px' : '10px 12px 10px 36px';
+      });
+    }
+  </script>
 </body>
 
 </html>
