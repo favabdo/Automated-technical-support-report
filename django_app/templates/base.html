@@ -36,9 +36,12 @@
             --card: #162035;
             --sidebar-w: 240px;
             --navbar-h: 60px;
+            --topbar-bg: #071020;
+            --topbar-border: rgba(37, 99, 235, 0.25);
+            --topbar-text: #c8d8f0;
+            --topbar-muted: #7a9abf;
         }
 
-        /* ===== LIGHT MODE ===== */
         body.light-mode {
             --bg: #f0f4f8;
             --bg2: #ffffff;
@@ -50,6 +53,10 @@
             --muted: #64748b;
             --blue-glow: rgba(37, 99, 235, 0.10);
             --green-glow: rgba(34, 197, 94, 0.10);
+            --topbar-bg: #1e3a5f;
+            --topbar-border: rgba(255, 255, 255, 0.12);
+            --topbar-text: #e2edf8;
+            --topbar-muted: #93b8d8;
         }
 
         * {
@@ -83,23 +90,26 @@
             transition: background 0.25s, border-color 0.25s;
         }
 
+        /* جزء اللوجو بلون مختلف دايمًا */
         .sidebar-logo {
             padding: 18px 20px;
-            border-bottom: 1px solid var(--border);
+            background: var(--topbar-bg);
+            border-bottom: 1px solid var(--topbar-border);
             display: flex;
             align-items: center;
             gap: 10px;
+            transition: background 0.25s;
         }
 
         .sidebar-logo img {
-            height: 36px;
+            height: 52px;
             object-fit: contain;
         }
 
         .sidebar-logo-text {
             font-size: 11px;
             font-weight: 700;
-            color: var(--muted);
+            color: var(--topbar-muted);
             line-height: 1.4;
             letter-spacing: 0.3px;
         }
@@ -182,7 +192,7 @@
             gap: 10px;
             padding: 10px 12px;
             background: rgba(239, 68, 68, 0.08);
-            color: #fb7878;
+            color: #fca5a5;
             border-radius: 8px;
             text-decoration: none;
             font-size: 13.5px;
@@ -196,15 +206,15 @@
             color: #fff;
         }
 
-        /* ===== NAVBAR ===== */
+        /* ===== NAVBAR - لون مختلف دايمًا ===== */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: var(--sidebar-w);
             height: var(--navbar-h);
-            background: var(--bg2);
-            border-bottom: 1px solid var(--border);
+            background: var(--topbar-bg);
+            border-bottom: 1px solid var(--topbar-border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -222,7 +232,7 @@
         .page-breadcrumb {
             font-size: 15px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--topbar-text);
         }
 
         .navbar-right {
@@ -236,24 +246,24 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: var(--surface);
-            border: 1px solid var(--border2);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--topbar-border);
             border-radius: 8px;
             padding: 5px 10px;
         }
 
         .date-filter label {
             font-size: 11px;
-            color: var(--muted);
+            color: var(--topbar-muted);
             font-weight: 600;
         }
 
         .date-filter input {
             padding: 4px 7px;
-            border: 1px solid var(--border2);
+            border: 1px solid var(--topbar-border);
             border-radius: 6px;
-            background: var(--surface2);
-            color: var(--text);
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--topbar-text);
             font-family: 'Cairo', sans-serif;
             font-size: 11px;
             outline: none;
@@ -294,13 +304,13 @@
             align-items: center;
             gap: 5px;
             padding: 6px 10px;
-            background: var(--surface);
-            border: 1px solid var(--border2);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--topbar-border);
             border-radius: 8px;
             font-family: 'Cairo', sans-serif;
             font-size: 11px;
             font-weight: 700;
-            color: var(--muted);
+            color: var(--topbar-muted);
             cursor: pointer;
             transition: all 0.18s;
         }
@@ -310,18 +320,17 @@
             color: #93c5fd;
         }
 
-        /* ===== THEME TOGGLE BTN ===== */
         .theme-btn {
             width: 36px;
             height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--surface);
-            border: 1px solid var(--border2);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--topbar-border);
             border-radius: 8px;
             cursor: pointer;
-            color: var(--muted);
+            color: var(--topbar-muted);
             font-size: 15px;
             transition: all 0.18s;
         }
@@ -339,11 +348,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--surface);
-            border: 1px solid var(--border2);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--topbar-border);
             border-radius: 8px;
             cursor: pointer;
-            color: var(--muted);
+            color: var(--topbar-muted);
             font-size: 15px;
             transition: all 0.18s;
         }
@@ -361,7 +370,7 @@
             height: 7px;
             background: var(--red);
             border-radius: 50%;
-            border: 1.5px solid var(--bg2);
+            border: 1.5px solid var(--topbar-bg);
         }
 
         /* Profile */
@@ -370,8 +379,8 @@
             align-items: center;
             gap: 8px;
             padding: 5px 10px 5px 5px;
-            background: var(--surface);
-            border: 1px solid var(--border2);
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid var(--topbar-border);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.18s;
@@ -403,12 +412,12 @@
         .profile-name {
             font-size: 12px;
             font-weight: 700;
-            color: var(--text);
+            color: var(--topbar-text);
         }
 
         .profile-role {
             font-size: 10px;
-            color: var(--muted);
+            color: var(--topbar-muted);
         }
 
         .profile-dropdown {
@@ -716,7 +725,6 @@
             color: #1d4ed8;
         }
 
-        /* ===== CARDS ===== */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -815,7 +823,7 @@
             background: rgba(37, 99, 235, 0.25);
         }
 
-        /* ===== SEARCH & FILTERS ===== */
+        /* ===== FILTERS ===== */
         .filters {
             background: var(--surface);
             border-radius: 12px;
@@ -956,6 +964,7 @@
 
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar">
+        <!-- جزء اللوجو بلون مختلف -->
         <div class="sidebar-logo">
             <img src="{% static 'images/NTLogo3.png' %}" alt="NT">
             <div class="sidebar-logo-text">Nile Techno<br>Reports</div>
@@ -990,7 +999,6 @@
         </div>
     </aside>
 
-    <!-- ===== NAVBAR ===== -->
     <nav class="navbar">
         <div class="navbar-left">
             <span class="page-breadcrumb">{% block page_title %}{% endblock %}</span>
@@ -1020,7 +1028,6 @@
                 <span id="langLabel">EN</span>
             </button>
 
-            <!-- ✅ زرار الـ light/dark mode -->
             <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير المظهر">
                 <i class="fa-regular fa-sun" id="themeIcon"></i>
             </button>
@@ -1038,7 +1045,8 @@
                     <div class="profile-name">{{ request.user.first_name|default:request.user.username }}</div>
                     <div class="profile-role">{% block user_role %}User{% endblock %}</div>
                 </div>
-                <i class="fa-solid fa-chevron-down" style="font-size:9px;color:var(--muted);margin-right:2px;"></i>
+                <i class="fa-solid fa-chevron-down"
+                    style="font-size:9px;color:var(--topbar-muted);margin-right:2px;"></i>
 
                 <div class="profile-dropdown">
                     <a href="/users/profile/" class="profile-dropdown-item">
@@ -1069,16 +1077,38 @@
         function applyLang(lang) {
             if (lang === 'en') {
                 document.getElementById('langLabel').textContent = 'AR';
-                document.querySelectorAll('[data-en]').forEach(el => el.textContent = el.getAttribute('data-en'));
+                document.querySelectorAll('[data-en]').forEach(el => {
+                    el.textContent = el.getAttribute('data-en');
+                });
             } else {
                 document.getElementById('langLabel').textContent = 'EN';
-                document.querySelectorAll('[data-ar]').forEach(el => el.textContent = el.getAttribute('data-ar'));
+                document.querySelectorAll('[data-ar]').forEach(el => {
+                    el.textContent = el.getAttribute('data-ar');
+                });
             }
             localStorage.setItem('ntLang', lang);
             currentLang = lang;
         }
 
         function toggleLang() { applyLang(currentLang === 'ar' ? 'en' : 'ar'); }
+
+        const langObserver = new MutationObserver(() => {
+            if (currentLang === 'en') {
+                document.querySelectorAll('[data-en]').forEach(el => {
+                    if (el.textContent !== el.getAttribute('data-en')) {
+                        el.textContent = el.getAttribute('data-en');
+                    }
+                });
+            } else {
+                document.querySelectorAll('[data-ar]').forEach(el => {
+                    if (el.textContent !== el.getAttribute('data-ar')) {
+                        el.textContent = el.getAttribute('data-ar');
+                    }
+                });
+            }
+        });
+
+        langObserver.observe(document.body, { childList: true, subtree: true });
         applyLang(currentLang);
 
         /* ===== THEME ===== */
@@ -1088,7 +1118,7 @@
             const icon = document.getElementById('themeIcon');
             if (theme === 'light') {
                 document.body.classList.add('light-mode');
-                icon.className = 'fa-solid fa-moon';
+                icon.className = 'fa-regular fa-moon';
             } else {
                 document.body.classList.remove('light-mode');
                 icon.className = 'fa-regular fa-sun';
