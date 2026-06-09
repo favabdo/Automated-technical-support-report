@@ -70,12 +70,13 @@
         .sidebar {
             position: fixed;
             top: 0;
-            left: 0;
-            /* ✅ على الشمال زي الصورة */
+            right: 0;
+            left: auto;
             width: var(--sidebar-w);
             height: 100vh;
             background: var(--bg2);
-            border-right: 1px solid var(--border);
+            border-left: 1px solid var(--border);
+            border-right: none;
             display: flex;
             flex-direction: column;
             z-index: 100;
@@ -162,12 +163,12 @@
         .nav-item.active::before {
             content: '';
             position: absolute;
-            left: 0;
+            right: 0;
             top: 6px;
             bottom: 6px;
             width: 3px;
             background: linear-gradient(var(--blue), var(--green));
-            border-radius: 0 3px 3px 0;
+            border-radius: 3px 0 0 3px;
         }
 
         .sidebar-footer {
@@ -181,7 +182,7 @@
             gap: 10px;
             padding: 10px 12px;
             background: rgba(239, 68, 68, 0.08);
-            color: #fca5a5;
+            color: #fb7878;
             border-radius: 8px;
             text-decoration: none;
             font-size: 13.5px;
@@ -199,9 +200,8 @@
         .navbar {
             position: fixed;
             top: 0;
-            left: var(--sidebar-w);
-            /* ✅ بعد السايدبار على الشمال */
-            right: 0;
+            left: 0;
+            right: var(--sidebar-w);
             height: var(--navbar-h);
             background: var(--bg2);
             border-bottom: 1px solid var(--border);
@@ -469,8 +469,8 @@
 
         /* ===== MAIN ===== */
         .main {
-            margin-left: var(--sidebar-w);
-            /* ✅ على الشمال زي الصورة */
+            margin-right: var(--sidebar-w);
+            margin-left: 0;
             margin-top: var(--navbar-h);
             padding: 24px;
             min-height: calc(100vh - var(--navbar-h));
@@ -1022,7 +1022,7 @@
 
             <!-- ✅ زرار الـ light/dark mode -->
             <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" title="تغيير المظهر">
-                <i class="fa-solid fa-sun" id="themeIcon"></i>
+                <i class="fa-regular fa-sun" id="themeIcon"></i>
             </button>
 
             <div class="bell-btn">
@@ -1091,7 +1091,7 @@
                 icon.className = 'fa-solid fa-moon';
             } else {
                 document.body.classList.remove('light-mode');
-                icon.className = 'fa-solid fa-sun';
+                icon.className = 'fa-regular fa-sun';
             }
             localStorage.setItem('ntTheme', theme);
             currentTheme = theme;
