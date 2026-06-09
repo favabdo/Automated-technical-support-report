@@ -114,10 +114,16 @@
             letter-spacing: 0.3px;
         }
 
+        /* ===== SIDEBAR NAV - نفس لون اللوجو بـ opacity أقل ===== */
         .sidebar-nav {
             flex: 1;
             padding: 12px 10px;
             overflow-y: auto;
+            background: rgba(7, 16, 32, 0.55);
+        }
+
+        body.light-mode .sidebar-nav {
+            background: rgba(30, 58, 95, 0.08);
         }
 
         .sidebar-section {
@@ -158,16 +164,23 @@
 
         .nav-item.active {
             background: var(--blue-glow);
-            color: #93c5fd;
+            color: var(--text);
             border: 1px solid rgba(37, 99, 235, 0.25);
+        }
+
+        /* الأيقونة بلون مميز للصفحة الحالية */
+        .nav-item.active i {
+            color: #38bdf8;
+            filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.5));
         }
 
         body.light-mode .nav-item.active {
             color: #1d4ed8;
         }
 
-        .nav-item.active i {
-            color: #60a5fa;
+        body.light-mode .nav-item.active i {
+            color: #0ea5e9;
+            filter: drop-shadow(0 0 3px rgba(14, 165, 233, 0.4));
         }
 
         .nav-item.active::before {
@@ -206,15 +219,15 @@
             color: #fff;
         }
 
-        /* ===== NAVBAR - لون مختلف دايمًا ===== */
+        /* ===== NAVBAR - نفس لون خلفية الصفحة ===== */
         .navbar {
             position: fixed;
             top: 0;
             left: 0;
             right: var(--sidebar-w);
             height: var(--navbar-h);
-            background: var(--topbar-bg);
-            border-bottom: 1px solid var(--topbar-border);
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -232,7 +245,7 @@
         .page-breadcrumb {
             font-size: 15px;
             font-weight: 700;
-            color: var(--topbar-text);
+            color: var(--text);
         }
 
         .navbar-right {
@@ -246,24 +259,24 @@
             display: flex;
             align-items: center;
             gap: 6px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--topbar-border);
+            background: var(--surface);
+            border: 1px solid var(--border2);
             border-radius: 8px;
             padding: 5px 10px;
         }
 
         .date-filter label {
             font-size: 11px;
-            color: var(--topbar-muted);
+            color: var(--muted);
             font-weight: 600;
         }
 
         .date-filter input {
             padding: 4px 7px;
-            border: 1px solid var(--topbar-border);
+            border: 1px solid var(--border2);
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.08);
-            color: var(--topbar-text);
+            background: var(--surface2);
+            color: var(--text);
             font-family: 'Cairo', sans-serif;
             font-size: 11px;
             outline: none;
@@ -304,13 +317,13 @@
             align-items: center;
             gap: 5px;
             padding: 6px 10px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--topbar-border);
+            background: var(--surface);
+            border: 1px solid var(--border2);
             border-radius: 8px;
             font-family: 'Cairo', sans-serif;
             font-size: 11px;
             font-weight: 700;
-            color: var(--topbar-muted);
+            color: var(--muted);
             cursor: pointer;
             transition: all 0.18s;
         }
@@ -320,17 +333,18 @@
             color: #93c5fd;
         }
 
+        /* Theme btn */
         .theme-btn {
             width: 36px;
             height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--topbar-border);
+            background: var(--surface);
+            border: 1px solid var(--border2);
             border-radius: 8px;
             cursor: pointer;
-            color: var(--topbar-muted);
+            color: var(--muted);
             font-size: 15px;
             transition: all 0.18s;
         }
@@ -348,11 +362,11 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--topbar-border);
+            background: var(--surface);
+            border: 1px solid var(--border2);
             border-radius: 8px;
             cursor: pointer;
-            color: var(--topbar-muted);
+            color: var(--muted);
             font-size: 15px;
             transition: all 0.18s;
         }
@@ -370,7 +384,7 @@
             height: 7px;
             background: var(--red);
             border-radius: 50%;
-            border: 1.5px solid var(--topbar-bg);
+            border: 1.5px solid var(--bg2);
         }
 
         /* Profile */
@@ -379,8 +393,8 @@
             align-items: center;
             gap: 8px;
             padding: 5px 10px 5px 5px;
-            background: rgba(255, 255, 255, 0.07);
-            border: 1px solid var(--topbar-border);
+            background: var(--surface);
+            border: 1px solid var(--border2);
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.18s;
@@ -412,12 +426,12 @@
         .profile-name {
             font-size: 12px;
             font-weight: 700;
-            color: var(--topbar-text);
+            color: var(--text);
         }
 
         .profile-role {
             font-size: 10px;
-            color: var(--topbar-muted);
+            color: var(--muted);
         }
 
         .profile-dropdown {
@@ -725,6 +739,7 @@
             color: #1d4ed8;
         }
 
+        /* ===== PERSON CARDS ===== */
         .cards-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -964,7 +979,6 @@
 
     <!-- ===== SIDEBAR ===== -->
     <aside class="sidebar">
-        <!-- جزء اللوجو بلون مختلف -->
         <div class="sidebar-logo">
             <img src="{% static 'images/NTLogo3.png' %}" alt="NT">
             <div class="sidebar-logo-text">Nile Techno<br>Reports</div>
@@ -999,6 +1013,7 @@
         </div>
     </aside>
 
+    <!-- ===== NAVBAR - نفس لون خلفية الصفحة ===== -->
     <nav class="navbar">
         <div class="navbar-left">
             <span class="page-breadcrumb">{% block page_title %}{% endblock %}</span>
@@ -1045,8 +1060,7 @@
                     <div class="profile-name">{{ request.user.first_name|default:request.user.username }}</div>
                     <div class="profile-role">{% block user_role %}User{% endblock %}</div>
                 </div>
-                <i class="fa-solid fa-chevron-down"
-                    style="font-size:9px;color:var(--topbar-muted);margin-right:2px;"></i>
+                <i class="fa-solid fa-chevron-down" style="font-size:9px;color:var(--muted);margin-right:2px;"></i>
 
                 <div class="profile-dropdown">
                     <a href="/users/profile/" class="profile-dropdown-item">
