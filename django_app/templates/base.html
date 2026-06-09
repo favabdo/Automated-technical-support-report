@@ -1143,6 +1143,13 @@
 
         function toggleTheme() { applyTheme(currentTheme === 'dark' ? 'light' : 'dark'); }
         applyTheme(currentTheme);
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            const href = item.getAttribute('href');
+            if (href && window.location.pathname === href) {
+                item.classList.add('active');
+            }
+        });
     </script>
 </body>
 
