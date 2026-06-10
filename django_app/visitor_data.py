@@ -46,8 +46,10 @@ def generate_visitor_data():
             classification = f"تم حل مشكلة: {problem}" if resolved else f"لم يتم حل مشكلة: {problem}"
             summary = f"تواصل العميل بخصوص {problem}. {'تم حل المشكلة بنجاح.' if resolved else 'المشكلة قيد المتابعة.'}"
 
+            resolution_minutes = random.randint(5, 120)
+
             reports.append({
-                'id': report_id,
+                'conv_id': report_id,
                 'customer_name': customer_name,
                 'customer_phone': f"01{random.randint(0,2)}{random.randint(10000000, 99999999)}",
                 'agent_name': agent_name,
@@ -57,6 +59,7 @@ def generate_visitor_data():
                 'resolved_date': int(report_date.strftime('%Y%m%d')),
                 'resolved_time': f"{hour_12:02d}:{minute:02d} {ampm}",
                 'created_at': report_date,
+                'resolution_minutes': resolution_minutes,
             })
             report_id += 1
 
@@ -66,14 +69,17 @@ def generate_visitor_data():
         agent_id = agent_idx + 1
         agent_reports = [r for r in reports if r['agent_name'] == agent_name]
         total = len(agent_reports)
-        resolved = sum(1 for r in agent_reports if 'تم حل' in r['classification'])
+        resolved = sum(1 for r in agent_reports if r['classification'].startswith('تم حل'))
         unresolved = total - resolved
+        mins = [r['resolution_minutes'] for r in agent_reports if r['resolution_minutes'] is not None]
+        avg_resolution_minutes = round(sum(mins) / len(mins)) if mins else None
         agents.append({
             'agent_id': agent_id,
             'agent_name': agent_name,
             'total': total,
             'resolved': resolved,
             'unresolved': unresolved,
+            'avg_resolution_minutes': avg_resolution_minutes,
         })
 
     agents.sort(key=lambda x: x['total'], reverse=True)
@@ -83,9 +89,11 @@ def generate_visitor_data():
     for idx, customer_name in enumerate(customer_names):
         customer_reports = [r for r in reports if r['customer_name'] == customer_name]
         total = len(customer_reports)
-        resolved = sum(1 for r in customer_reports if 'تم حل' in r['classification'])
+        resolved = sum(1 for r in customer_reports if r['classification'].startswith('تم حل'))
         unresolved = total - resolved
         phone = f"01{random.randint(0,2)}{random.randint(10000000, 99999999)}"
+        mins = [r['resolution_minutes'] for r in customer_reports if r['resolution_minutes'] is not None]
+        avg_resolution_minutes = round(sum(mins) / len(mins)) if mins else None
         customers.append({
             'customer_id': idx + 101,
             'customer_name': customer_name,
@@ -93,13 +101,14 @@ def generate_visitor_data():
             'total_reports': total,
             'resolved': resolved,
             'unresolved': unresolved,
+            'avg_resolution_minutes': avg_resolution_minutes,
         })
 
     customers.sort(key=lambda x: x['total_reports'], reverse=True)
 
     # ---------------- إحصائيات عامة ----------------
     total_reports = len(reports)
-    total_resolved = sum(1 for r in reports if 'تم حل' in r['classification'])
+    total_resolved = sum(1 for r in reports if r['classification'].startswith('تم حل'))
     total_unresolved = total_reports - total_resolved
 
     # ---------------- أكثر المشاكل ----------------
@@ -124,7 +133,7 @@ def generate_visitor_data():
     monthly = []
     for agent in agents:
         agent_reports = [r for r in reports if r['agent_name'] == agent['agent_name']]
-        resolved = sum(1 for r in agent_reports if 'تم حل' in r['classification'])
+        resolved = sum(1 for r in agent_reports if r['classification'].startswith('تم حل'))
         unresolved = len(agent_reports) - resolved
         monthly.append({
             'agent_name': agent['agent_name'],
@@ -132,6 +141,65 @@ def generate_visitor_data():
             'resolved': resolved,
             'unresolved': unresolved,
         })
+
+    # ---------------- ترافيك الرسائل (شهري، مع ضمان عدم النزول للصفر) ----------------
+    from collections import defaultdict
+    monthly_counts = defaultdict(int)
+    for r in reports:
+        d = r['created_at']
+        if hasattr(d, 'strftime'):
+            key = d.strftime('%Y-%m')
+        else:
+            key = str(d)[:7]  # "2026-01"
+        monthly_counts[key] += 1
+
+    # تأكد إن كل شهر من يناير لآخر شهر فيه قيمة (مينفعش يبقى صفر)
+    if monthly_counts:
+        all_months = sorted(monthly_counts.keys())
+        first = all_months[0]
+        last  = all_months[-1]
+        from datetime import date as _date
+        fy, fm = int(first[:4]), int(first[5:7])
+        ly, lm = int(last[:4]),  int(last[5:7])
+        cur_y, cur_m = fy, fm
+        while (cur_y, cur_m) <= (ly, lm):
+            key = f"{cur_y}-{cur_m:02d}"
+            if key not in monthly_counts:
+                # شهر فاضي → أعطيه قيمة صغيرة عشوائية بين 3 و 8
+                monthly_counts[key] = random.randint(3, 8)
+            cur_m += 1
+            if cur_m > 12:
+                cur_m = 1
+                cur_y += 1
+
+    traffic_by_date = sorted(
+        [{'date': k, 'count': v} for k, v in monthly_counts.items()],
+        key=lambda x: x['date']
+    )
+
+    # ---------------- متوسط وقت الحل الكلي ----------------
+    all_mins = [r['resolution_minutes'] for r in reports if r['resolution_minutes'] is not None]
+    avg_resolution_overall = round(sum(all_mins) / len(all_mins)) if all_mins else 0
+
+    # ---------------- متوسط وقت الحل لكل عميل ----------------
+    avg_resolution_by_customer = []
+    for c in customers:
+        if c['avg_resolution_minutes']:
+            avg_resolution_by_customer.append({
+                'name': c['customer_name'],
+                'avg': c['avg_resolution_minutes'],
+            })
+    avg_resolution_by_customer.sort(key=lambda x: x['avg'], reverse=True)
+
+    # ---------------- متوسط وقت الحل لكل أيجنت ----------------
+    avg_resolution_by_agent = []
+    for a in agents:
+        if a['avg_resolution_minutes']:
+            avg_resolution_by_agent.append({
+                'name': a['agent_name'],
+                'avg': a['avg_resolution_minutes'],
+            })
+    avg_resolution_by_agent.sort(key=lambda x: x['avg'], reverse=True)
 
     return {
         'reports': reports,
@@ -147,6 +215,10 @@ def generate_visitor_data():
         'resolved_pct': round(total_resolved / total_reports * 100) if total_reports else 0,
         'unresolved_pct': round(total_unresolved / total_reports * 100) if total_reports else 0,
         'monthly': monthly,
+        'traffic_by_date': traffic_by_date,
+        'avg_resolution_overall':      avg_resolution_overall,
+        'avg_resolution_by_customer':  avg_resolution_by_customer,
+        'avg_resolution_by_agent':     avg_resolution_by_agent,
     }
 
 
