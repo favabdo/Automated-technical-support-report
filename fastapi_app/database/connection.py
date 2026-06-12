@@ -11,4 +11,4 @@ def get_connection():
         port=DB_PORT,
         tds_version=DB_TDS_VERSION,
         charset=DB_CHARSET
-                            )
+    )
