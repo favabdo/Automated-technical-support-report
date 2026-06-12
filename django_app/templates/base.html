@@ -5,7 +5,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Nile Techno Reports{% endblock %}</title>
+    <title>Nile Techno - {% block title %}Dashboard{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{% static 'images/NTLogo3.png' %}">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -206,14 +207,15 @@
             align-items: center;
             gap: 10px;
             padding: 10px 12px;
-            background: rgba(239, 68, 68, 0.08);
+            background: rgba(239, 68, 68, 0.14);
             color: #fca5a5;
             border-radius: 8px;
             text-decoration: none;
             font-size: 13.5px;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.18s;
-            border: 1px solid rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.30);
+            letter-spacing: 0.2px;
         }
 
         .logout-btn:hover {
@@ -256,42 +258,7 @@
             gap: 10px;
         }
 
-        /* Date Filter */
-        .date-filter {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            background: var(--surface);
-            border: 1px solid var(--border2);
-            border-radius: 8px;
-            padding: 5px 10px;
-        }
 
-        .date-filter label {
-            font-size: 11px;
-            color: var(--muted);
-            font-weight: 600;
-        }
-
-        .date-filter input {
-            padding: 4px 7px;
-            border: 1px solid var(--border2);
-            border-radius: 6px;
-            background: var(--surface2);
-            color: var(--text);
-            font-family: 'Cairo', sans-serif;
-            font-size: 11px;
-            outline: none;
-            color-scheme: dark;
-        }
-
-        body.light-mode .date-filter input {
-            color-scheme: light;
-        }
-
-        .date-filter input:focus {
-            border-color: var(--blue);
-        }
 
         .btn-filter {
             padding: 5px 10px;
@@ -450,7 +417,7 @@
             overflow: hidden;
         }
 
-        .profile-btn:hover .profile-dropdown {
+        .profile-dropdown.show {
             display: block;
         }
 
@@ -870,6 +837,30 @@
             gap: 10px;
             align-items: center;
             margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .month-year-picker {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .month-year-picker select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border2);
+            background: var(--surface2);
+            color: var(--text);
+            font-family: 'Cairo', sans-serif;
+            font-size: 13px;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.18s;
+        }
+
+        .month-year-picker select:focus {
+            border-color: var(--blue);
         }
 
         .search-bar {
@@ -939,6 +930,11 @@
             font-size: 13px;
             font-weight: 600;
             transition: all 0.18s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
         }
 
         .btn-primary {
@@ -1043,20 +1039,6 @@
                 padding: 0 16px;
             }
 
-            .date-filter {
-                gap: 4px;
-                padding: 4px 8px;
-            }
-
-            .date-filter input {
-                font-size: 10px;
-                padding: 3px 5px;
-            }
-
-            .date-filter label {
-                display: none;
-            }
-
             .charts-grid {
                 grid-template-columns: 1fr 1fr;
                 gap: 12px;
@@ -1128,14 +1110,6 @@
                 display: none;
             }
 
-            .lang-btn {
-                display: none;
-            }
-
-            .date-filter {
-                display: none;
-            }
-
             /* profile بيبقى compact */
             .profile-info {
                 display: none;
@@ -1178,12 +1152,30 @@
             }
 
             /* Table overflow */
-            .table-card {
+            .table-card,
+            .table-wrap {
                 overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
             table {
-                min-width: 600px;
+                min-width: 520px;
+            }
+
+            /* Filters-bar vertical on mobile */
+            .filters-bar {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .filters-bar .select-input,
+            .filters-bar .search-input {
+                flex: 1 1 140px;
+                min-width: 0;
+            }
+
+            .filters-bar .btn {
+                flex-shrink: 0;
             }
 
             /* Page title أصغر */
@@ -1244,6 +1236,13 @@
 
             .main {
                 padding: 10px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .main > * {
+                width: 100%;
+                max-width: 100%;
             }
         }
     </style>
@@ -1268,7 +1267,7 @@
             </a>
             <a href="/agents/" class="nav-item {% block nav_agents %}{% endblock %}">
                 <i class="fa-solid fa-headset"></i>
-                <span data-ar="الأجنت" data-en="Agents">الأجنت</span>
+                <span data-ar="دعم العملاء" data-en="Customer Support">دعم العملاء</span>
             </a>
             <a href="/customers/" class="nav-item {% block nav_customers %}{% endblock %}">
                 <i class="fa-solid fa-users"></i>
@@ -1297,28 +1296,10 @@
             <button class="menu-toggle" id="menuToggle" onclick="openSidebar()">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <span class="page-breadcrumb">{% block page_title %}{% endblock %}</span>
+            <span class="page-breadcrumb" id="pageBreadcrumb">{% block page_title %}{% endblock %}</span>
         </div>
 
         <div class="navbar-right">
-            <form method="get" class="date-filter" id="dateFilterForm">
-                <label data-ar="من" data-en="From">من</label>
-                <input type="date" name="from" value="{{ request.GET.from }}">
-                <label data-ar="إلى" data-en="To">إلى</label>
-                <input type="date" name="to" value="{{ request.GET.to }}">
-                <button type="submit" class="btn-filter">
-                    <i class="fa-solid fa-filter"></i>
-                    <span data-ar="تصفية" data-en="Filter">تصفية</span>
-                </button>
-                {% if request.GET.search %}<input type="hidden" name="search" value="{{ request.GET.search }}">
-                {% endif%}
-                {% if request.GET.agent %}<input type="hidden" name="agent" value="{{ request.GET.agent }}">{% endif %}
-                {% if request.GET.classification %}<input type="hidden" name="classification"
-                    value="{{ request.GET.classification }}">{% endif %}
-                {% if request.GET.month %}<input type="hidden" name="month" value="{{ request.GET.month }}">{% endif %}
-                {% if request.GET.year %}<input type="hidden" name="year" value="{{ request.GET.year }}">{% endif %}
-            </form>
-
             <button class="lang-btn" onclick="toggleLang()">
                 <i class="fa-solid fa-globe"></i>
                 <span id="langLabel">EN</span>
@@ -1378,10 +1359,16 @@
                 document.querySelectorAll('[data-en]').forEach(el => {
                     el.textContent = el.getAttribute('data-en');
                 });
+                document.querySelectorAll('[data-en-placeholder]').forEach(el => {
+                    el.placeholder = el.getAttribute('data-en-placeholder');
+                });
             } else {
                 document.getElementById('langLabel').textContent = 'EN';
                 document.querySelectorAll('[data-ar]').forEach(el => {
                     el.textContent = el.getAttribute('data-ar');
+                });
+                document.querySelectorAll('[data-ar-placeholder]').forEach(el => {
+                    el.placeholder = el.getAttribute('data-ar-placeholder');
                 });
             }
             localStorage.setItem('ntLang', lang);
@@ -1457,6 +1444,20 @@
                 if (window.innerWidth <= 767) closeSidebar();
             });
         });
+
+        /* ===== PROFILE DROPDOWN ON CLICK ===== */
+        const profileBtn = document.querySelector('.profile-btn');
+        if (profileBtn) {
+            profileBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const dropdown = this.querySelector('.profile-dropdown');
+                if (dropdown) dropdown.classList.toggle('show');
+            });
+            document.addEventListener('click', function() {
+                const dropdown = profileBtn.querySelector('.profile-dropdown');
+                if (dropdown) dropdown.classList.remove('show');
+            });
+        }
     </script>
 </body>
 
