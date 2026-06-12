@@ -109,7 +109,7 @@ def save_problem(customer_id, prob_type, problem,
                  category_id, agent_id, conv_id,
                  start_message_date, resolve_date, duration_minutes,
                  summary)
-            VALUES (%d, %s, %s, %d, %d, %s, %d, %d, %d, %s)
+            VALUES (%d, %d, %s, %d, %d, %s, %d, %d, %d, %s)
         """, (
             customer_id,
             prob_type,

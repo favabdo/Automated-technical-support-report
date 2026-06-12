@@ -40,7 +40,6 @@ DB_PORT     = int(os.getenv("DB_PORT", "1433"))
 DB_TDS_VERSION = os.getenv("DB_TDS_VERSION")
 DB_CHARSET     = os.getenv("DB_CHARSET")
 
-
 # ---------------- TABLE NAMES ----------------
 PROBLEM_TABLE  = "customar_problem_byA"
 USERS_TABLE    = "users_Details_byA"

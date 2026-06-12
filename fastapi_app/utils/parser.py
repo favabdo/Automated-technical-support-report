@@ -1,5 +1,5 @@
 def parse_ai_result(raw_text):
-    prob_type = "not_resolved"
+    prob_type = 0
     problem   = ""
     category  = ""
     summary   = ""
@@ -7,8 +7,8 @@ def parse_ai_result(raw_text):
         for line in raw_text.splitlines():
             line = line.strip()
             if line.startswith("النوع:"):
-                val = line.replace("النوع:", "").strip().lower()
-                prob_type = "resolved" if "resolved" in val else "not_resolved"
+                val = line.replace("النوع:", "").strip()
+                prob_type = 1 if val == "1" else 0
             elif line.startswith("المشكلة:"):
                 problem = line.replace("المشكلة:", "").strip()
             elif line.startswith("التصنيف:"):

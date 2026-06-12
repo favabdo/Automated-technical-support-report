@@ -31,7 +31,7 @@ def init_db():
                 CREATE TABLE {PROBLEM_TABLE} (
                     id                  INT IDENTITY(1,1) PRIMARY KEY,
                     customer_id         INT,
-                    type                NVARCHAR(20),
+                    type                INT,              -- 1=resolved | 0=not_resolved
                     problem             NVARCHAR(MAX),
                     category_id         INT,
                     agent_id            INT,
