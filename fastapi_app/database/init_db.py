@@ -39,9 +39,10 @@ def init_db():
                     start_message_date  BIGINT,
                     resolve_date        BIGINT,
                     duration_minutes    INT,
-                    status              INT DEFAULT 1 ,  -- 1=active (not archived) | 0=archived
                     summary             NVARCHAR(MAX),
                     created_at          DATETIME DEFAULT GETDATE()
+                    status              INT DEFAULT 1 ,  -- 1=active (not archived) | 0=archived
+
                 )
             END
         """)
