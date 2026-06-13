@@ -75,7 +75,7 @@ def get_existing_category_names() -> list:
 def save_user(user_id, user_name, phone, user_type):
     if user_id is None:
         return
-    user_type_label = "عميل" if user_type == 1 else "ايجينت"
+    user_type_label = "Customer" if user_type == 1 else "Customer Support"
     try:
         conn   = get_connection()
         cursor = conn.cursor()
