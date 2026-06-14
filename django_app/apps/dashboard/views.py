@@ -4,6 +4,9 @@ from db_connection import get_connection, is_manager_level, get_role
 from visitor_data import get_visitor_data
 from datetime import date
 import calendar
+import logging
+
+logger = logging.getLogger(__name__)
 
 ARABIC_MONTHS = {
     1:'يناير',2:'فبراير',3:'مارس',4:'أبريل',5:'مايو',6:'يونيو',
@@ -48,7 +51,6 @@ def _date_int(date_str):
 
 
 def _empty_context():
-    """بيرجع context فاضي بأصفار لو فيه مشكلة في DB"""
     return {
         'total_reports':           0,
         'total_resolved':          0,
@@ -173,81 +175,77 @@ def home(request):
         conn   = get_connection()
         cursor = conn.cursor(as_dict=True)
 
-        df_int = _date_int(date_from)
-        dt_int = _date_int(date_to)
+        # ── 1. الكروت ──
+        cursor.execute(
+            "EXEC sp_DashboardCard_bya @FromDate = %s, @ToDate = %s",
+            (date_from, date_to)
+        )
+        card_row = cursor.fetchone()
+        cursor.nextset()
 
-        where = f"WHERE resolved_date BETWEEN {df_int} AND {dt_int}"
-        if not is_manager_level(request.user):
-            where += f" AND agent_name = '{request.user.first_name or request.user.username}'"
-
-        cursor.execute(f"SELECT COUNT(*) AS total FROM Customer_service_reports_by_A {where}")
-        total_reports = cursor.fetchone()['total']
-
-        cursor.execute(f"SELECT COUNT(*) AS total FROM Customer_service_reports_by_A {where} AND classification LIKE N'تم حل%'")
-        total_resolved = cursor.fetchone()['total']
-
-        cursor.execute(f"SELECT COUNT(*) AS total FROM Customer_service_reports_by_A {where} AND classification LIKE N'لم يتم%'")
-        total_unresolved = cursor.fetchone()['total']
-
-        cursor.execute("SELECT COUNT(*) AS total FROM customer_detail_by_A")
-        total_customers = cursor.fetchone()['total']
+        if card_row:
+            total_reports          = card_row.get('TotalConversations',    0) or 0
+            total_resolved         = card_row.get('Resolved',              0) or 0
+            total_unresolved       = card_row.get('Unresolved',            0) or 0
+            total_customers        = card_row.get('TotalCustomers',        0) or 0
+            avg_resolution_overall = round(card_row.get('AvgResolutionMinutes', 0) or 0)
+        else:
+            total_reports = total_resolved = total_unresolved = total_customers = avg_resolution_overall = 0
 
         resolved_pct   = round(total_resolved   / total_reports * 100) if total_reports else 0
         unresolved_pct = round(total_unresolved / total_reports * 100) if total_reports else 0
 
-        cursor.execute(f"""
-            SELECT TOP 5 agent_name,
-                   COUNT(*) AS total,
-                   SUM(CASE WHEN classification LIKE N'تم حل%' THEN 1 ELSE 0 END) AS resolved,
-                   SUM(CASE WHEN classification LIKE N'لم يتم%' THEN 1 ELSE 0 END) AS unresolved
-            FROM Customer_service_reports_by_A {where}
-            GROUP BY agent_name ORDER BY total DESC
-        """)
-        top_agents_resolved = cursor.fetchall()
-
-        cursor.execute(f"""
-            SELECT TOP 5 customer_name, COUNT(*) AS total
-            FROM Customer_service_reports_by_A {where}
-            GROUP BY customer_name ORDER BY total DESC
-        """)
-        top_customers = cursor.fetchall()
-
-        cursor.execute(f"""
-            SELECT TOP 5 classification, COUNT(*) AS total
-            FROM Customer_service_reports_by_A {where}
-            GROUP BY classification ORDER BY total DESC
-        """)
-        common_problems = cursor.fetchall()
-
-        cursor.execute(f"""
-            SELECT AVG(CAST(resolution_minutes AS FLOAT)) AS avg_mins
-            FROM Customer_service_reports_by_A {where}
-            AND resolution_minutes IS NOT NULL
-        """)
-        row = cursor.fetchone()
-        avg_resolution_overall = round(row['avg_mins']) if row and row['avg_mins'] else 0
-
-        cursor.execute(f"""
-            SELECT TOP 8 agent_name AS name,
-                   AVG(CAST(resolution_minutes AS FLOAT)) AS avg
-            FROM Customer_service_reports_by_A {where}
-            AND resolution_minutes IS NOT NULL
-            GROUP BY agent_name ORDER BY avg DESC
-        """)
-        avg_resolution_by_agent = [
-            {'name': r['name'], 'avg': round(r['avg'])} for r in cursor.fetchall()
+        # ── 2. Top Agents ──
+        cursor.execute(
+            "EXEC Top_Agent_resolved_byA @FromDate = %s, @ToDate = %s",
+            (date_from, date_to)
+        )
+        raw_agents = cursor.fetchall() or []
+        top_agents_resolved = [
+            {
+                'agent_name':   r.get('agent_name',   ''),
+                'total':        r.get('TotalProblems', 0) or 0,
+                'resolved':     r.get('Resolved',      0) or 0,
+                'unresolved':   r.get('Unresolved',    0) or 0,
+                'avg':          round(r.get('Avg_Resolution_Time', 0) or 0),
+            }
+            for r in raw_agents
         ]
+        avg_resolution_by_agent = [
+            {'name': a['agent_name'], 'avg': a['avg']}
+            for a in top_agents_resolved
+        ]
+        cursor.nextset()
 
-        cursor.execute(f"""
-            SELECT resolved_date, COUNT(*) AS cnt
-            FROM Customer_service_reports_by_A {where}
-            GROUP BY resolved_date ORDER BY resolved_date
-        """)
-        traffic_by_date = []
-        for r in cursor.fetchall():
-            d_str = str(r['resolved_date'])
-            label = f"{d_str[6:8]}/{d_str[4:6]}/{d_str[:4]}"
-            traffic_by_date.append({'date': label, 'count': r['cnt']})
+        # ── 3. Top Customers ──
+        cursor.execute(
+            "EXEC Top_Customer_byA @FromDate = %s, @ToDate = %s",
+            (date_from, date_to)
+        )
+        raw_customers = cursor.fetchall() or []
+        top_customers = [
+            {
+                'customer_name': r.get('customer_name', ''),
+                'total':         r.get('TotalContacts',  0) or 0,
+            }
+            for r in raw_customers
+        ]
+        cursor.nextset()
+
+        # ── 4. Most Common Issues ──
+        cursor.execute(
+            "EXEC Top_Common_Issues_byA @FromDate = %s, @ToDate = %s",
+            (date_from, date_to)
+        )
+        raw_issues = cursor.fetchall() or []
+        common_problems = [
+            {
+                'classification': r.get('category_name', ''),
+                'total':          r.get('TotalIssues',   0) or 0,
+            }
+            for r in raw_issues
+        ]
+        cursor.nextset()
 
         conn.close()
 
@@ -262,10 +260,11 @@ def home(request):
             'common_problems':         common_problems,
             'resolved_pct':            resolved_pct,
             'unresolved_pct':          unresolved_pct,
-            'traffic_by_date':         traffic_by_date,
+            'traffic_by_date':         [],
             'avg_resolution_overall':  avg_resolution_overall,
             'avg_resolution_by_agent': avg_resolution_by_agent,
         })
 
-    except Exception:
+    except Exception as e:
+        logger.error("Dashboard DB error: %s", e, exc_info=True)
         return render(request, 'dashboard/home.html', {**base_ctx, **_empty_context()})

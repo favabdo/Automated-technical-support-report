@@ -113,6 +113,21 @@ def change_password(request):
             request.user.profile.is_first_login = False
             request.user.profile.save()
             update_session_auth_hash(request, request.user)
+
+            # حفظ الـ password hash في SQL Server عشان يتستعاد بعد أي deploy
+            try:
+                from db_connection import get_connection
+                conn   = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "UPDATE users_Details_byA SET phone = %s WHERE user_id = %s",
+                    (request.user.password, request.user.profile.agent_id)
+                )
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass  # مش هيكسر حاجة لو فشل
+
             messages.success(request, 'تم تغيير كلمة المرور بنجاح')
             return redirect('home')
 
@@ -144,7 +159,7 @@ def manage_users(request):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT users_id, name
+            SELECT user_id, name
             FROM users_Details_byA
             WHERE user_type = 2
         """)

@@ -101,24 +101,27 @@ def agents_list(request):
     try:
         conn   = get_connection()
         cursor = conn.cursor(as_dict=True)
-        where = "WHERE 1=1"
-        if not is_manager_level(request.user):
-            where += f" AND agent_name = '{request.user.first_name or request.user.username}'"
+        cursor.execute(
+            "EXEC Top_Agent_resolved_byA @FromDate = %s, @ToDate = %s",
+            (date_from, date_to)
+        )
+        raw = cursor.fetchall() or []
+        agents = [
+            {
+                'agent_id':               r.get('agent_id',          ''),
+                'agent_name':             r.get('agent_name',         ''),
+                'total':                  r.get('TotalProblems',       0) or 0,
+                'resolved':               r.get('Resolved',            0) or 0,
+                'unresolved':             r.get('Unresolved',          0) or 0,
+                'avg_resolution_minutes': round(r.get('Avg_Resolution_Time', 0) or 0) or None,
+            }
+            for r in raw
+        ]
         if search:
-            where += f" AND agent_name LIKE N'%{search}%'"
-        if date_from:
-            where += f" AND resolved_date >= {date_from.replace('-', '')}"
-        if date_to:
-            where += f" AND resolved_date <= {date_to.replace('-', '')}"
-        cursor.execute(f"""
-            SELECT agent_id, agent_name, COUNT(*) AS total,
-                   SUM(CASE WHEN classification LIKE N'تم حل%' THEN 1 ELSE 0 END) AS resolved,
-                   SUM(CASE WHEN classification LIKE N'لم يتم%' THEN 1 ELSE 0 END) AS unresolved,
-                   AVG(CAST(resolution_minutes AS FLOAT)) AS avg_resolution_minutes
-            FROM Customer_service_reports_by_A {where}
-            GROUP BY agent_id, agent_name ORDER BY total DESC
-        """)
-        agents = cursor.fetchall()
+            agents = [a for a in agents if search in a['agent_name']]
+        if not is_manager_level(request.user):
+            current = request.user.first_name or request.user.username
+            agents = [a for a in agents if a['agent_name'] == current]
         conn.close()
     except Exception:
         agents = []
@@ -153,15 +156,32 @@ def agent_detail(request, agent_id):
     try:
         conn   = get_connection()
         cursor = conn.cursor(as_dict=True)
-        cursor.execute(f"SELECT TOP 1 agent_id, agent_name FROM Customer_service_reports_by_A WHERE agent_id = {agent_id}")
-        agent = cursor.fetchone()
-        where = f"WHERE agent_id = {agent_id}"
-        if date_from:
-            where += f" AND resolved_date >= {date_from.replace('-', '')}"
-        if date_to:
-            where += f" AND resolved_date <= {date_to.replace('-', '')}"
-        cursor.execute(f"SELECT * FROM Customer_service_reports_by_A {where} ORDER BY resolved_date DESC, resolved_time DESC")
-        reports = cursor.fetchall()
+        cursor.execute(
+            "EXEC Get_Reports_byA @FromDate = %s, @ToDate = %s",
+            (date_from, date_to)
+        )
+        raw = cursor.fetchall() or []
+        all_reports = [
+            {
+                'conv_id':            r.get('conv_id',           ''),
+                'agent_id':           r.get('agent_id',          ''),
+                'agent_name':         r.get('agent_name',        ''),
+                'customer_id':        r.get('customer_id',       ''),
+                'customer_name':      r.get('customer_name',     ''),
+                'customer_phone':     r.get('customer_phone',    ''),
+                'classification':     r.get('classification',    ''),
+                'summary':            r.get('summary',           ''),
+                'resolution_minutes': r.get('resolution_minutes', None),
+                'resolve_date':       r.get('resolve_date',      ''),
+                'resolved_time':      r.get('resolve_time',      ''),
+                'status_label':       r.get('status_label',      ''),
+            }
+            for r in raw
+        ]
+        # جيب بيانات الأجنت من أول تقرير
+        agent_rows = [r for r in all_reports if str(r['agent_id']) == str(agent_id)]
+        agent = {'agent_id': agent_id, 'agent_name': agent_rows[0]['agent_name']} if agent_rows else None
+        reports = agent_rows
         conn.close()
     except Exception:
         agent, reports = None, []
