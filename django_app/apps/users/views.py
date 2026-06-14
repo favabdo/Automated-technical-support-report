@@ -59,6 +59,11 @@ def login_view(request):
         username = (request.POST.get('username') or request.POST.get('agent_id', '')).strip()
         password = request.POST.get('password', '').strip()
 
+        import logging
+        log = logging.getLogger(__name__)
+
+        from django.contrib.auth.hashers import is_password_usable
+
         user = authenticate(request, username=username, password=password)
 
         if not user:
@@ -67,6 +72,89 @@ def login_view(request):
                 user = authenticate(request, username=profile.user.username, password=password)
             except (UserProfile.DoesNotExist, ValueError):
                 pass
+
+        # لو authenticate فشلت → دور في SQL وصلّح/أنشئ اليوزر
+        if not user:
+            try:
+                conn   = get_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "SELECT user_id, user_name, phone FROM users_Details_byA WHERE user_id = %s AND user_type = 2",
+                    (username,)
+                )
+                row = cursor.fetchone()
+                conn.close()
+
+                if row:
+                    sql_id     = str(row[0]).strip()
+                    sql_name   = (row[1] or '').strip()
+                    saved_hash = row[2].strip() if row[2] else None
+
+                    # جيب أو أنشئ الـ Django User
+                    try:
+                        dj_user = User.objects.get(username=sql_id)
+                    except User.DoesNotExist:
+                        dj_user = None
+
+                    if saved_hash and is_password_usable(saved_hash):
+                        # فيه hash محفوظ → حدّث الباسورد في Django منه (زي setup_admins)
+                        if dj_user is None:
+                            dj_user = User(username=sql_id, first_name=sql_name)
+                        dj_user.password = saved_hash
+                        dj_user.save()
+                        is_first = False
+                    else:
+                        # أول مرة خالص → باسورد = ID
+                        if dj_user is None:
+                            dj_user = User.objects.create_user(
+                                username=sql_id,
+                                password=sql_id,
+                                first_name=sql_name,
+                            )
+                        else:
+                            dj_user.set_password(sql_id)
+                            dj_user.save()
+                        # احفظ الـ hash في SQL
+                        try:
+                            conn2   = get_connection()
+                            cursor2 = conn2.cursor()
+                            cursor2.execute(
+                                "UPDATE users_Details_byA SET phone = %s WHERE user_id = %s",
+                                (dj_user.password, sql_id)
+                            )
+                            conn2.commit()
+                            conn2.close()
+                        except Exception as e:
+                            log.warning("فشل حفظ الـ hash في SQL: %s", e)
+                        is_first = True
+
+                    # أنشئ أو حدّث الـ UserProfile
+                    profile, _ = UserProfile.objects.get_or_create(
+                        agent_id=sql_id,
+                        defaults={
+                            'user':          dj_user,
+                            'full_name':     sql_name,
+                            'role':          'agent',
+                            'is_first_login': is_first,
+                        }
+                    )
+
+                    # authenticate بالباسورد الصح
+                    login_password = sql_id if is_first else password
+                    user = authenticate(request, username=sql_id, password=login_password)
+                    if user:
+                        login(request, user)
+                        if is_first:
+                            return redirect('change_password')
+                        return redirect('home')
+                    else:
+                        log.error("authenticate فشلت للـ ID: %s", sql_id)
+                        messages.error(request, 'اسم المستخدم أو كلمة المرور غير صحيحة')
+                else:
+                    log.info("ID %s مش موجود في SQL أو user_type مش 2", username)
+
+            except Exception as e:
+                log.error("خطأ في SQL أثناء auto-register: %s", e, exc_info=True)
 
         if user:
             login(request, user)
