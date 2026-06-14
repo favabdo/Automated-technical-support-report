@@ -996,13 +996,22 @@
 
         /* ===== FOOTER ===== */
         .site-footer {
-            margin-top: 32px;
-            padding: 16px 0 8px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             border-top: 1px solid var(--border);
             text-align: center;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--muted);
             letter-spacing: 0.3px;
+            margin-top: 32px;
+        }
+
+        @media (max-width: 767px) {
+            .site-footer {
+                font-size: 10px;
+            }
         }
 
         /* ===== LOGO في الـ NAVBAR (موبايل فقط) ===== */
@@ -1372,10 +1381,11 @@
     <!-- ===== MAIN ===== -->
     <main class="main">
         {% block content %}{% endblock %}
-        <footer class="site-footer">
-            © 2026 Nile Techno — All rights reserved &nbsp;|&nbsp; Design by Abdullah Elsawy
-        </footer>
     </main>
+
+    <footer class="site-footer">
+        © 2026 Nile Techno — All rights reserved &nbsp;|&nbsp; Design by Abdullah Elsawy
+    </footer>
 
     {% block extra_js %}{% endblock %}
 
