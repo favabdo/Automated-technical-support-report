@@ -228,8 +228,8 @@
         <input type="hidden" name="from" value="{{ date_from }}">
         <input type="hidden" name="to" value="{{ date_to }}">
         {% endif %}
-        <input class="search-input" type="text" name="search" placeholder="ابحث عن أيجنت..."
-            data-ar-placeholder="ابحث عن أيجنت..." data-en-placeholder="Search agent..." value="{{ search }}">
+        <input class="search-input" type="text" name="search" placeholder="ابحث عن موظف الدعم..."
+            data-ar-placeholder="ابحث عن موظف الدعم..." data-en-placeholder="Search customer support..." value="{{ search }}">
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass"></i> <span data-ar="بحث"
                 data-en="Search">بحث</span></button>
         <a href="{% url 'agents_list' %}" class="btn btn-ghost"><i class="fa-solid fa-xmark"></i> <span data-ar="مسح"
