@@ -55,7 +55,7 @@ def _build_base_data(agent_names, customer_names, year):
             reports.append({
                 'conv_id':           report_id,
                 'customer_name':     customer_name,
-                'customer_phone':    '000000000000',,
+                'customer_phone':    '000000000000',
                 'agent_name':        agent_name,
                 'agent_id':          agent_idx + 1,
                 'classification':    classification,
