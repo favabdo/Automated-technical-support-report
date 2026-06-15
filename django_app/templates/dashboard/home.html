@@ -17,7 +17,7 @@
     }
 
     .dash-welcome {
-        font-size: 14px;
+        font-size: 16px;
         color: var(--muted);
         display: flex;
         align-items: center;
@@ -49,7 +49,7 @@
         background: none;
         border: none;
         color: var(--muted);
-        font-size: 12px;
+        font-size: 14px;
         font-family: 'Cairo', sans-serif;
         padding: 5px 12px;
         cursor: pointer;
@@ -70,7 +70,7 @@
     }
 
     .filter-inputs label {
-        font-size: 12px;
+        font-size: 14px;
         color: var(--muted);
         white-space: nowrap;
     }
@@ -81,7 +81,7 @@
         border: 1px solid var(--border);
         border-radius: 6px;
         color: var(--text);
-        font-size: 12px;
+        font-size: 14px;
         padding: 4px 8px;
         height: 30px;
         font-family: 'Cairo', sans-serif;
@@ -101,7 +101,7 @@
         border: none;
         border-radius: 6px;
         padding: 5px 14px;
-        font-size: 12px;
+        font-size: 14px;
         font-family: 'Cairo', sans-serif;
         cursor: pointer;
         white-space: nowrap;
@@ -148,12 +148,18 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        font-size: 13px;
+        font-size: 15px;
+        border-radius: 6px;
+        padding: 4px 6px;
+        transition: background 0.15s;
+    }
+    .problems-list li:hover {
+        background: var(--surface2);
     }
 
     .problems-list .rank {
         width: 20px;
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 700;
         color: var(--muted);
         flex-shrink: 0;
@@ -164,7 +170,7 @@
         width: 110px;
         flex-shrink: 0;
         color: var(--text);
-        font-size: 12px;
+        font-size: 14px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -191,8 +197,31 @@
         flex-shrink: 0;
         color: var(--accent);
         font-weight: 700;
-        font-size: 13px;
+        font-size: 15px;
         text-align: left;
+    }
+
+    /* hint سهم "تفاصيل" على اليمين */
+    .problems-list .prob-details-hint {
+        flex-shrink: 0;
+        width: 52px;
+        text-align: center;
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--accent);
+        opacity: 0;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+    }
+
+    .problems-list li.prob-item:hover .prob-details-hint {
+        opacity: 1;
+    }
+
+    /* اللي مفيهاش category_id مش clickable */
+    .problems-list li.prob-item--no-id {
+        cursor: default;
+        opacity: 0.6;
     }
 
     .pie-wrap {
@@ -216,7 +245,30 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        font-size: 14px;
+        font-size: 16px;
+        position: relative;
+    }
+
+    .pie-legend-item[onclick]:hover::after,
+    .problems-list li:hover::after {
+        content: attr(title);
+        position: absolute;
+        bottom: calc(100% + 6px);
+        right: 0;
+        background: rgba(15, 20, 45, 0.92);
+        color: #e2e8f0;
+        font-size: 12px;
+        font-family: 'Cairo', sans-serif;
+        padding: 4px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+        pointer-events: none;
+        z-index: 99;
+        border: 1px solid var(--border);
+    }
+
+    .problems-list li {
+        position: relative;
     }
 
     .pie-legend-dot {
@@ -225,6 +277,104 @@
         border-radius: 50%;
         flex-shrink: 0;
     }
+
+    /* ── Details buttons ── */
+    .btn-details {
+        border: 1px solid;
+        border-radius: 6px;
+        padding: 3px 10px;
+        font-size: 12px;
+        font-family: 'Cairo', sans-serif;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: opacity .15s;
+    }
+    .btn-details:hover { opacity: .8; }
+    .btn-details-blue   { background:rgba(79,110,247,.12); border-color:var(--accent); color:var(--accent); }
+    .btn-details-purple { background:rgba(124,58,237,.12); border-color:#7c3aed;      color:#a78bfa; }
+    .btn-details-green  { background:rgba(34,197,94,.10);  border-color:var(--green); color:var(--green); }
+
+    /* ── Details Modal ── */
+    .details-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.55);
+        z-index: 900;
+        align-items: center;
+        justify-content: center;
+    }
+    .details-modal-overlay.open { display: flex; }
+    .details-modal {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px 24px 20px;
+        min-width: 340px;
+        max-width: 620px;
+        width: 94vw;
+        max-height: 80vh;
+        overflow-y: auto;
+        position: relative;
+        box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    .details-modal h3 {
+        margin: 0 0 18px;
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .details-modal .close-btn {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        background: none;
+        border: none;
+        color: var(--muted);
+        font-size: 18px;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: background .15s, color .15s;
+    }
+    .details-modal .close-btn:hover { background: var(--surface2); color: var(--text); }
+    .details-modal table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .details-modal th {
+        text-align: right;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+    .details-modal td {
+        padding: 9px 10px;
+        border-bottom: 1px solid rgba(255,255,255,.04);
+        color: var(--text);
+        vertical-align: middle;
+    }
+    .details-modal tr:last-child td { border-bottom: none; }
+    .details-modal tr:hover td { background: var(--surface2); }
+    .details-modal .go-btn {
+        background: none;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+        border-radius: 5px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-family: 'Cairo', sans-serif;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background .15s;
+    }
+    .details-modal .go-btn:hover { background: var(--accent); color: #fff; }
+    .pct-bar { display:inline-block; height:7px; border-radius:4px; vertical-align:middle; margin-right:6px; }
 </style>
 {% endblock %}
 
@@ -340,25 +490,38 @@
 
     <!-- أكتر أيجنت حل -->
     <div class="chart-card">
-        <div class="section-title" data-ar="أكثر أيجنت حل مشاكل" data-en="Top Resolving Agents">أكثر أيجنت حل مشاكل
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div class="section-title" style="margin-bottom:0" data-ar="أكثر أيجنت حل مشاكل" data-en="Top Resolving Agents">أكثر أيجنت حل مشاكل</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button onclick="showAgentsDetails()" class="btn-details btn-details-blue"><i class="fa-solid fa-table-list"></i> <span data-ar="تفاصيل" data-en="Details">تفاصيل</span></button>
+                <span style="font-size:11px;color:var(--muted);"><i class="fa-solid fa-hand-pointer" style="margin-left:3px;"></i><span data-ar="اضغط للتفاصيل" data-en="Click for details">اضغط للتفاصيل</span></span>
+            </div>
         </div>
         <canvas id="agentsChart"></canvas>
     </div>
 
     <!-- أكتر عميل تواصل -->
     <div class="chart-card">
-        <div class="section-title" data-ar="أكثر العملاء تواصلاً" data-en="Top Contacting Customers">أكثر العملاء
-            تواصلاً</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+            <div class="section-title" style="margin-bottom:0" data-ar="أكثر العملاء تواصلاً" data-en="Top Contacting Customers">أكثر العملاء تواصلاً</div>
+            <div style="display:flex;gap:8px;align-items:center;">
+                <button onclick="showCustomersDetails()" class="btn-details btn-details-purple"><i class="fa-solid fa-table-list"></i> <span data-ar="تفاصيل" data-en="Details">تفاصيل</span></button>
+                <span style="font-size:11px;color:var(--muted);"><i class="fa-solid fa-hand-pointer" style="margin-left:3px;"></i><span data-ar="اضغط للتفاصيل" data-en="Click for details">اضغط للتفاصيل</span></span>
+            </div>
+        </div>
         <canvas id="customersChart"></canvas>
     </div>
 
     <!-- نسبة الحل -->
     <div class="chart-card">
-        <div class="section-title" data-ar="نسبة الحل" data-en="Resolution Rate">نسبة الحل</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div class="section-title" style="margin-bottom:0" data-ar="نسبة الحل" data-en="Resolution Rate">نسبة الحل</div>
+            <button onclick="showResolutionDetails()" class="btn-details btn-details-green"><i class="fa-solid fa-table-list"></i> <span data-ar="تفاصيل" data-en="Details">تفاصيل</span></button>
+        </div>
         <div class="pie-wrap">
             <canvas id="pieChart"></canvas>
             <div class="pie-legend">
-                <div class="pie-legend-item">
+                <div class="pie-legend-item" style="cursor:pointer" onclick="goReports('resolved_type', '1')" title="Click to view resolved reports | اضغط لعرض التقارير المحلولة">
                     <div class="pie-legend-dot" style="background:var(--green)"></div>
                     <div>
                         <div style="font-weight:700;font-size:18px;color:var(--green)">{{ resolved_pct }}%</div>
@@ -366,7 +529,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="pie-legend-item">
+                <div class="pie-legend-item" style="cursor:pointer" onclick="goReports('resolved_type', '0')" title="Click to view unresolved reports | اضغط لعرض التقارير غير المحلولة">
                     <div class="pie-legend-dot" style="background:var(--red)"></div>
                     <div>
                         <div style="font-weight:700;font-size:18px;color:var(--red)">{{ unresolved_pct }}%</div>
@@ -393,13 +556,22 @@
             {% if common_problems %}
             {% with max_val=common_problems.0.total %}
             {% for p in common_problems %}
-            <li>
+            <li style="cursor:pointer" 
+                onclick="{% if p.category_id %}goReportsCategory('{{ p.category_id|escapejs }}', '{{ p.classification|escapejs }}'){% endif %}"
+                data-ar-title="اضغط لعرض تفاصيل: {{ p.classification }}"
+                data-en-title="Click for details: {{ p.classification }}"
+                class="prob-item {% if not p.category_id %}prob-item--no-id{% endif %}">
                 <span class="rank">{{ forloop.counter }}</span>
                 <span class="prob-text" title="{{ p.classification }}">{{ p.classification }}</span>
                 <div class="prob-bar-wrap">
                     <div class="prob-bar" style="width:{% widthratio p.total max_val 100 %}%"></div>
                 </div>
                 <span class="prob-count">{{ p.total }}</span>
+                {% if p.category_id %}
+                <span class="prob-details-hint">
+                    <span data-ar="تفاصيل" data-en="Details"><i class="fa-solid fa-arrow-left"></i></span>
+                </span>
+                {% endif %}
             </li>
             {% endfor %}
             {% endwith %}
@@ -429,6 +601,16 @@
     </div>
 
 </div>
+
+<!-- ── Details Modal ── -->
+<div class="details-modal-overlay" id="detailsModalOverlay" onclick="closeDetailsModal(event)">
+    <div class="details-modal" id="detailsModal">
+        <button class="close-btn" onclick="closeDetailsModalForce()"><i class="fa-solid fa-xmark"></i></button>
+        <h3 id="detailsModalTitle"></h3>
+        <div id="detailsModalBody"></div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -494,10 +676,11 @@
     };
 
     // Agents Bar
+    const agentsLabels = [{% for a in top_agents_resolved %}"{{ a.agent_name }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
     new Chart(document.getElementById('agentsChart'), {
         type: 'bar',
         data: {
-            labels: [{% for a in top_agents_resolved %}"{{ a.agent_name }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: agentsLabels,
         datasets: [
         {
             label: 'محلول',
@@ -529,15 +712,30 @@
         scales: {
             y: { grid: { display: false }, border: { display: false }, ticks: { stepSize: 1 }, grace: '15%' },
             x: { grid: { display: false }, border: { display: false }, ...xAxisWrap }
-        }
+        },
+        onClick(evt, elements) {
+            if (!elements.length) return;
+            const agentName = agentsLabels[elements[0].index];
+            const datasetIdx = elements[0].datasetIndex;
+            const p = new URLSearchParams();
+            p.set('filter_mode', '{{ filter_mode }}');
+            {% if filter_month_year %}p.set('month_year', '{{ filter_month_year }}');{% endif %}
+            p.set('from', '{{ date_from }}');
+            p.set('to',   '{{ date_to }}');
+            p.set('agent', agentName);
+            p.set('resolved_type', datasetIdx === 0 ? '1' : '0');
+            window.location.href = '/reports/?' + p.toString();
+        },
+        onHover(evt, el) { evt.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
     }
     });
 
     // Customers Bar
+    const customersLabels = [{% for c in top_customers %}"{{ c.customer_name }}"{% if not forloop.last %}, {% endif %}{% endfor %}];
     new Chart(document.getElementById('customersChart'), {
         type: 'bar',
         data: {
-            labels: [{% for c in top_customers %}"{{ c.customer_name }}"{% if not forloop.last %}, {% endif %}{% endfor %}],
+            labels: customersLabels,
         datasets: [{
             label: 'عدد المحادثات',
             data: [{% for c in top_customers %}{{ c.total }}{% if not forloop.last %}, {% endif %} {% endfor %}],
@@ -558,7 +756,13 @@
         scales: {
             y: { grid: { display: false }, border: { display: false }, ticks: { stepSize: 1 }, grace: '15%' },
             x: { grid: { display: false }, border: { display: false }, ...xAxisWrap }
-        }
+        },
+        onClick(evt, elements) {
+            if (!elements.length) return;
+            const name = customersLabels[elements[0].index];
+            goReports('customer_name', name);
+        },
+        onHover(evt, el) { evt.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
     }
     });
 
@@ -580,7 +784,12 @@
         plugins: {
             legend: { display: false },
             datalabels: { display: false },
-        }
+        },
+        onClick(evt, elements) {
+            if (!elements.length) return;
+            goReports('resolved_type', elements[0].index === 0 ? '1' : '0');
+        },
+        onHover(evt, el) { evt.native.target.style.cursor = el.length ? 'pointer' : 'default'; },
     }
 });
     // Agent Avg Resolution Bar
@@ -664,6 +873,29 @@
     }
     });
 
+    // ── Navigation helper: روح لصفحة التقارير مع الفلاتر الحالية ──
+    function goReports(param, value) {
+        const p = new URLSearchParams();
+        p.set('filter_mode', '{{ filter_mode }}');
+        {% if filter_month_year %}p.set('month_year', '{{ filter_month_year }}');{% endif %}
+        p.set('from', '{{ date_from }}');
+        p.set('to',   '{{ date_to }}');
+        p.set(param, value);
+        window.location.href = '/reports/?' + p.toString();
+    }
+
+    // ── Navigation helper خاص بالكاتيجوري (بيبعت الاسم كمان عشان الـ badge) ──
+    function goReportsCategory(categoryId, categoryName) {
+        const p = new URLSearchParams();
+        p.set('filter_mode', '{{ filter_mode }}');
+        {% if filter_month_year %}p.set('month_year', '{{ filter_month_year }}');{% endif %}
+        p.set('from', '{{ date_from }}');
+        p.set('to',   '{{ date_to }}');
+        p.set('category_id',   categoryId);
+        p.set('category_name', categoryName);
+        window.location.href = '/reports/?' + p.toString();
+    }
+
     function switchFilterMode(mode) {
         var isMonthYear = mode === 'monthyear';
         document.getElementById('formMonthYear').style.display = isMonthYear ? 'flex' : 'none';
@@ -679,5 +911,125 @@
         var mode = params.get('filter_mode') || localStorage.getItem('dashFilterMode') || 'monthyear';
         switchFilterMode(mode);
     })();
+
+    // ضبط title الـ prob-items حسب اللغة الحالية
+    (function () {
+        var isAr = document.documentElement.lang !== 'en' &&
+                   (localStorage.getItem('lang') || 'ar') === 'ar';
+        document.querySelectorAll('.prob-item[data-ar-title]').forEach(function (li) {
+            li.title = isAr ? li.dataset.arTitle : li.dataset.enTitle;
+        });
+    })();
+
+    // ── بيانات الداشبورد للـ modals ──
+    const agentsData     = {{ top_agents_resolved|safe }};
+    const customersData  = {{ top_customers|safe }};
+    const resolvedPct    = {{ resolved_pct }};
+    const unresolvedPct  = {{ unresolved_pct }};
+    const totalReports   = {{ total_reports }};
+    const totalResolved  = {{ total_resolved }};
+    const totalUnresolved= {{ total_unresolved }};
+
+    function openModal(title, bodyHtml) {
+        document.getElementById('detailsModalTitle').innerHTML = title;
+        document.getElementById('detailsModalBody').innerHTML  = bodyHtml;
+        document.getElementById('detailsModalOverlay').classList.add('open');
+    }
+
+    function closeDetailsModal(e) {
+        if (e.target === document.getElementById('detailsModalOverlay'))
+            document.getElementById('detailsModalOverlay').classList.remove('open');
+    }
+
+    function closeDetailsModalForce() {
+        document.getElementById('detailsModalOverlay').classList.remove('open');
+    }
+
+    function makeGoBtn(param, value, label) {
+        const p = new URLSearchParams();
+        p.set('filter_mode', '{{ filter_mode }}');
+        {% if filter_month_year %}p.set('month_year', '{{ filter_month_year }}');{% endif %}
+        p.set('from', '{{ date_from }}');
+        p.set('to',   '{{ date_to }}');
+        p.set(param, value);
+        return `<a href="/reports/?${p.toString()}" class="go-btn" style="text-decoration:none;display:inline-block;">${label}</a>`;
+    }
+
+    function showAgentsDetails() {
+        if (!agentsData.length) { openModal('<i class="fa-solid fa-user-tie"></i> تفاصيل الأيجنت', '<p style="color:var(--muted);text-align:center;padding:20px">لا توجد بيانات</p>'); return; }
+        let rows = agentsData.map(a => {
+            const total = a.total || 0;
+            const res   = a.resolved || 0;
+            const unres = a.unresolved || 0;
+            const avg   = a.avg || 0;
+            const resPct= total ? Math.round(res/total*100) : 0;
+            return `<tr>
+                <td><strong>${a.agent_name || '—'}</strong></td>
+                <td style="text-align:center;font-weight:700;color:var(--accent)">${total}</td>
+                <td style="text-align:center;color:var(--green)">${res}</td>
+                <td style="text-align:center;color:var(--red)">${unres}</td>
+                <td style="text-align:center;">
+                    <span class="pct-bar" style="width:${resPct * 0.6}px;background:var(--green);"></span>
+                    <span style="color:var(--green);font-weight:700;">${resPct}%</span>
+                </td>
+                <td style="text-align:center;color:#fbbf24">${avg > 0 ? avg + ' د' : '—'}</td>
+                <td>${makeGoBtn('agent', a.agent_name, 'عرض')}</td>
+            </tr>`;
+        }).join('');
+        openModal('<i class="fa-solid fa-user-tie" style="color:var(--accent)"></i> تفاصيل الأيجنت',
+            `<table><thead><tr>
+                <th>الأيجنت</th><th>الإجمالي</th><th>محلول</th><th>غير محلول</th><th>نسبة الحل</th><th>متوسط الحل</th><th></th>
+            </tr></thead><tbody>${rows}</tbody></table>`);
+    }
+
+    function showCustomersDetails() {
+        if (!customersData.length) { openModal('<i class="fa-solid fa-users"></i> تفاصيل العملاء', '<p style="color:var(--muted);text-align:center;padding:20px">لا توجد بيانات</p>'); return; }
+        const maxTotal = customersData[0].total || 1;
+        let rows = customersData.map((c, i) => {
+            const barW = Math.round(c.total / maxTotal * 80);
+            return `<tr>
+                <td style="text-align:center;color:var(--muted);font-weight:700">${i+1}</td>
+                <td><strong>${c.customer_name || '—'}</strong></td>
+                <td>
+                    <span class="pct-bar" style="width:${barW}px;background:rgba(124,58,237,.7);"></span>
+                    <span style="color:#a78bfa;font-weight:700;">${c.total}</span>
+                </td>
+                <td>${makeGoBtn('customer_name', c.customer_name, 'عرض')}</td>
+            </tr>`;
+        }).join('');
+        openModal('<i class="fa-solid fa-users" style="color:#a78bfa"></i> تفاصيل العملاء',
+            `<table><thead><tr><th>#</th><th>العميل</th><th>عدد المحادثات</th><th></th></tr></thead><tbody>${rows}</tbody></table>`);
+    }
+
+    function showResolutionDetails() {
+        const resPct  = resolvedPct;
+        const unrPct  = unresolvedPct;
+        const resBar  = Math.round(resPct  * 1.5);
+        const unrBar  = Math.round(unrPct  * 1.5);
+        const body = `
+        <table>
+            <thead><tr><th>الحالة</th><th>العدد</th><th>النسبة</th><th></th></tr></thead>
+            <tbody>
+                <tr>
+                    <td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;"></span> تم الحل</span></td>
+                    <td style="text-align:center;font-weight:700;color:var(--green)">${totalResolved}</td>
+                    <td><span class="pct-bar" style="width:${resBar}px;background:var(--green);"></span><span style="color:var(--green);font-weight:700;">${resPct}%</span></td>
+                    <td>${makeGoBtn('resolved_type', '1', 'عرض')}</td>
+                </tr>
+                <tr>
+                    <td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);display:inline-block;"></span> لم يتم الحل</span></td>
+                    <td style="text-align:center;font-weight:700;color:var(--red)">${totalUnresolved}</td>
+                    <td><span class="pct-bar" style="width:${unrBar}px;background:var(--red);"></span><span style="color:var(--red);font-weight:700;">${unrPct}%</span></td>
+                    <td>${makeGoBtn('resolved_type', '0', 'عرض')}</td>
+                </tr>
+                <tr>
+                    <td><span style="display:inline-flex;align-items:center;gap:6px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--yellow);display:inline-block;"></span> الإجمالي</span></td>
+                    <td style="text-align:center;font-weight:700;color:var(--yellow)">${totalReports}</td>
+                    <td colspan="2" style="color:var(--muted);font-size:13px;">100%</td>
+                </tr>
+            </tbody>
+        </table>`;
+        openModal('<i class="fa-solid fa-chart-pie" style="color:var(--green)"></i> تفاصيل نسبة الحل', body);
+    }
 </script>
 {% endblock %}

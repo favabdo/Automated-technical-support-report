@@ -6,7 +6,7 @@
   .summary-cell {
     max-width: 260px;
     color: var(--muted);
-    font-size: 13px;
+    font-size: 15px;
     line-height: 1.5;
   }
 
@@ -38,7 +38,7 @@
     cursor: pointer;
     padding: 2px 4px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 12px;
     transition: color 0.15s, background 0.15s;
     margin-top: 1px;
   }
@@ -79,7 +79,7 @@
     overflow-wrap: break-word;
     border-radius: 20px;
     padding: 3px 9px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
   }
 
@@ -97,7 +97,7 @@
     cursor: pointer;
     padding: 2px 4px;
     border-radius: 4px;
-    font-size: 11px;
+    font-size: 12px;
     transition: color 0.15s, background 0.15s;
     margin-top: 1px;
     display: none; /* hidden until JS detects overflow */
@@ -136,7 +136,7 @@
     background: none;
     border: none;
     color: var(--muted);
-    font-size: 12px;
+    font-size: 14px;
     font-family: 'Cairo', sans-serif;
     padding: 5px 12px;
     cursor: pointer;
@@ -157,7 +157,7 @@
   }
 
   .filter-inputs label {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--muted);
     white-space: nowrap;
   }
@@ -168,7 +168,7 @@
     border: 1px solid var(--border);
     border-radius: 6px;
     color: var(--text);
-    font-size: 12px;
+    font-size: 14px;
     padding: 4px 8px;
     height: 30px;
     font-family: 'Cairo', sans-serif;
@@ -188,7 +188,7 @@
     border: none;
     border-radius: 6px;
     padding: 5px 14px;
-    font-size: 12px;
+    font-size: 14px;
     font-family: 'Cairo', sans-serif;
     cursor: pointer;
     white-space: nowrap;
@@ -220,7 +220,7 @@
     border: 1px solid var(--border);
     background: var(--surface2);
     color: var(--text);
-    font-size: 13px;
+    font-size: 15px;
     font-family: 'Cairo', sans-serif;
     cursor: pointer;
     text-decoration: none;
@@ -247,7 +247,7 @@
   }
 
   .page-info {
-    font-size: 12px;
+    font-size: 14px;
     color: var(--muted);
     margin: 0 8px;
   }
@@ -276,6 +276,9 @@
       <input type="hidden" name="filter_mode" value="monthyear">
       {% if is_manager and filters.agent %}<input type="hidden" name="agent" value="{{ filters.agent }}">{% endif %}
       {% if filters.classification %}<input type="hidden" name="classification" value="{{ filters.classification }}">{% endif %}
+      {% if filters.customer_name %}<input type="hidden" name="customer_name" value="{{ filters.customer_name }}">{% endif %}
+      {% if filters.resolved_type %}<input type="hidden" name="resolved_type" value="{{ filters.resolved_type }}">{% endif %}
+      {% if filters.category_id %}<input type="hidden" name="category_id" value="{{ filters.category_id }}"><input type="hidden" name="category_name" value="{{ filters.category_name }}">{% endif %}
       <label data-ar="الشهر" data-en="Month">الشهر</label>
       <input type="month" name="month_year" value="{{ filter_month_year|default:'' }}">
       <button type="submit" class="btn-apply-filter"><i class="fa-solid fa-filter"></i> <span data-ar="تطبيق"
@@ -286,6 +289,9 @@
       <input type="hidden" name="filter_mode" value="exact">
       {% if is_manager and filters.agent %}<input type="hidden" name="agent" value="{{ filters.agent }}">{% endif %}
       {% if filters.classification %}<input type="hidden" name="classification" value="{{ filters.classification }}">{% endif %}
+      {% if filters.customer_name %}<input type="hidden" name="customer_name" value="{{ filters.customer_name }}">{% endif %}
+      {% if filters.resolved_type %}<input type="hidden" name="resolved_type" value="{{ filters.resolved_type }}">{% endif %}
+      {% if filters.category_id %}<input type="hidden" name="category_id" value="{{ filters.category_id }}"><input type="hidden" name="category_name" value="{{ filters.category_name }}">{% endif %}
       <label data-ar="من" data-en="From">من</label>
       <input type="date" name="from" value="{{ filters.from }}">
       <label data-ar="إلى" data-en="To">إلى</label>
@@ -304,6 +310,9 @@
   <input type="hidden" name="from" value="{{ filters.from }}">
   <input type="hidden" name="to" value="{{ filters.to }}">
   {% endif %}
+  {% if filters.customer_name %}<input type="hidden" name="customer_name" value="{{ filters.customer_name }}">{% endif %}
+  {% if filters.resolved_type %}<input type="hidden" name="resolved_type" value="{{ filters.resolved_type }}">{% endif %}
+  {% if filters.category_id %}<input type="hidden" name="category_id" value="{{ filters.category_id }}"><input type="hidden" name="category_name" value="{{ filters.category_name }}">{% endif %}
   <div class="filters-bar">
     {% if is_manager %}
     <select class="select-input" name="agent">
@@ -316,6 +325,26 @@
     <input class="search-input" type="text" name="classification" placeholder="فلتر بالتصنيف..."
       data-ar-placeholder="فلتر بالتصنيف..." data-en-placeholder="Filter by classification..."
       value="{{ filters.classification }}" style="min-width:180px">
+    {% if filters.customer_name %}
+    <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);color:#a78bfa;border-radius:6px;padding:4px 10px;font-size:13px;white-space:nowrap;">
+      <i class="fa-solid fa-user"></i> {{ filters.customer_name }}
+      <a href="{% url 'reports_list' %}?filter_mode={{ filter_mode }}&month_year={{ filter_month_year }}&from={{ filters.from }}&to={{ filters.to }}&agent={{ filters.agent }}&classification={{ filters.classification }}&resolved_type={{ filters.resolved_type }}&category_id={{ filters.category_id }}" style="color:inherit;margin-right:2px;" title="مسح فلتر العميل"><i class="fa-solid fa-xmark"></i></a>
+    </span>
+    {% endif %}
+    {% if resolved_type_label %}
+    <span style="display:inline-flex;align-items:center;gap:6px;{% if filters.resolved_type == '1' %}background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.4);color:#22c55e;{% else %}background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#ef4444;{% endif %}border-radius:6px;padding:4px 10px;font-size:13px;white-space:nowrap;">
+      <i class="fa-solid fa-{% if filters.resolved_type == '1' %}circle-check{% else %}circle-xmark{% endif %}"></i>
+      <span data-ar="{{ resolved_type_label }}" data-en="{% if filters.resolved_type == '1' %}Resolved{% else %}Unresolved{% endif %}">{{ resolved_type_label }}</span>
+      <a href="{% url 'reports_list' %}?filter_mode={{ filter_mode }}&month_year={{ filter_month_year }}&from={{ filters.from }}&to={{ filters.to }}&agent={{ filters.agent }}&classification={{ filters.classification }}&customer_name={{ filters.customer_name }}&category_id={{ filters.category_id }}" style="color:inherit;margin-right:2px;" title="مسح فلتر الحالة"><i class="fa-solid fa-xmark"></i></a>
+    </span>
+    {% endif %}
+    {% if filters.category_id %}
+    <span style="display:inline-flex;align-items:center;gap:6px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);color:#f59e0b;border-radius:6px;padding:4px 10px;font-size:13px;white-space:nowrap;">
+      <i class="fa-solid fa-tag"></i>
+      <span data-ar="الفئة: {{ filters.category_name|default:filters.category_id }}" data-en="Category: {{ filters.category_name|default:filters.category_id }}">{{ filters.category_name|default:filters.category_id }}</span>
+      <a href="{% url 'reports_list' %}?filter_mode={{ filter_mode }}&month_year={{ filter_month_year }}&from={{ filters.from }}&to={{ filters.to }}&agent={{ filters.agent }}&classification={{ filters.classification }}&customer_name={{ filters.customer_name }}&resolved_type={{ filters.resolved_type }}" style="color:inherit;margin-right:2px;" title="مسح فلتر الفئة | Clear category filter"><i class="fa-solid fa-xmark"></i></a>
+    </span>
+    {% endif %}
     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-filter"></i> <span data-ar="فلتر"
         data-en="Filter">فلتر</span></button>
     <a href="{% url 'reports_list' %}" class="btn btn-ghost"><i class="fa-solid fa-xmark"></i> <span data-ar="مسح"
