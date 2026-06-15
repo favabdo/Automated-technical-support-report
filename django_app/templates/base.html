@@ -358,7 +358,6 @@
             font-weight: 800;
             font-family: 'Cairo', sans-serif;
             border-radius: 10px;
-            border: 2px solid var(--bg2);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1168,7 +1167,7 @@
                 width: 100% !important;
                 border-radius: 16px 16px 0 0 !important;
                 max-height: 75vh;
-                z-index: 10000;
+                z-index: 11000;
                 transform: translateY(100%);
                 transition: transform 0.28s ease;
                 display: block !important;
@@ -1181,7 +1180,7 @@
                 position: fixed;
                 inset: 0;
                 background: rgba(0,0,0,0.5);
-                z-index: 9999;
+                z-index: 10999;
             }
             .notif-drawer-overlay.open {
                 display: block;
@@ -1326,10 +1325,10 @@
         /* ===== NOTIFICATIONS PANEL ===== */
         .notif-panel {
             display: none;
-            position: absolute;
-            top: calc(100% + 8px);
-            left: 0;
+            position: fixed;
+            top: 60px;
             width: 340px;
+            max-width: calc(100vw - 16px);
             background: var(--surface2);
             border: 1px solid var(--border2);
             border-radius: 12px;
@@ -1448,6 +1447,10 @@
                 <i class="fa-solid fa-chart-bar"></i>
                 <span data-ar="التقارير" data-en="Reports">التقارير</span>
             </a>
+            <a href="/users/profile/" class="nav-item {% block nav_profile %}{% endblock %}">
+                <i class="fa-solid fa-user"></i>
+                <span data-ar="الملف الشخصي" data-en="Profile">الملف الشخصي</span>
+            </a>
         </nav>
 
         <div class="sidebar-footer">
@@ -1507,28 +1510,6 @@
             <!-- Drawer overlay للموبايل -->
             <div class="notif-drawer-overlay" id="notifDrawerOverlay" onclick="closeNotifPanel()"></div>
 
-            <div class="profile-btn">
-                <div class="profile-avatar">
-                    {{ request.user.first_name|first|upper|default:request.user.username|first|upper }}
-                </div>
-                <div class="profile-info">
-                    <div class="profile-name">{{ request.user.first_name|default:request.user.username }}</div>
-                    <div class="profile-role">{% block user_role %}User{% endblock %}</div>
-                </div>
-                <i class="fa-solid fa-chevron-down" style="font-size:9px;color:var(--muted);margin-right:2px;"></i>
-
-                <div class="profile-dropdown">
-                    <a href="/users/profile/" class="profile-dropdown-item">
-                        <i class="fa-solid fa-user"></i>
-                        <span data-ar="الملف الشخصي" data-en="Profile">الملف الشخصي</span>
-                    </a>
-                    <div class="profile-dropdown-divider"></div>
-                    <a href="/users/logout/" class="profile-dropdown-item danger">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                        <span data-ar="تسجيل الخروج" data-en="Logout">تسجيل الخروج</span>
-                    </a>
-                </div>
-            </div>
         </div>
     </nav>
 
@@ -1681,6 +1662,16 @@
         if (isOpen) {
             closeNotifPanel();
         } else {
+            // احسب المكان الصح عشان الـ panel ميطلعش برا الشاشة
+            const btn   = document.getElementById('bellBtn');
+            const rect  = btn.getBoundingClientRect();
+            const panelW = Math.min(340, window.innerWidth - 16);
+            let left = rect.left;
+            if (left + panelW > window.innerWidth - 8) {
+                left = window.innerWidth - panelW - 8;
+            }
+            if (left < 8) left = 8;
+            panel.style.left = left + 'px';
             panel.classList.add('open');
             if (overlay) overlay.classList.add('open');
             loadNotifications();
@@ -1698,7 +1689,10 @@
         const panel   = document.getElementById('notifPanel');
         const wrapper = document.querySelector('.bell-wrapper');
         const overlay = document.getElementById('notifDrawerOverlay');
-        if (panel && wrapper && !wrapper.contains(e.target) && e.target !== overlay) {
+        if (panel && wrapper &&
+            !wrapper.contains(e.target) &&
+            !panel.contains(e.target) &&
+            e.target !== overlay) {
             closeNotifPanel();
         }
     });
@@ -1732,9 +1726,9 @@
 
         list.innerHTML = notifs.map(n => {
             const ic   = iconMap[n.type] || {cls:'login', fa:'fa-bell'};
-            const link = n.type === 'resolved' && n.agent_id
-                ? `/agents/${n.agent_id}/`
-                : '#';
+            const link = n.type === 'resolved' && n.conv_id
+                ? `/reports/?conv_id=${encodeURIComponent(n.conv_id)}`
+                : (n.type === 'resolved' && n.agent_id ? `/agents/${n.agent_id}/` : '#');
             return `
             <a class="notif-item ${n.is_read ? '' : 'unread'}"
                href="${link}"
@@ -1792,6 +1786,29 @@
             }
         } catch(e) {}
     });
+
+    // ── background poll: يولّد إشعارات resolved جديدة في أي صفحة كل 60 ثانية ──
+    async function pollResolvedNotifs() {
+        try {
+            const res  = await fetch('/users/check-resolved/', {credentials: 'same-origin'});
+            const data = await res.json();
+            if (data.new && data.new > 0) {
+                // في إشعارات جديدة → حدّث الـ badge فوراً
+                const res2  = await fetch(NOTIF_URL, {credentials: 'same-origin'});
+                const data2 = await res2.json();
+                const badge = document.getElementById('bellBadge');
+                if (data2.unread_count > 0) {
+                    badge.style.display = 'block';
+                    badge.textContent = data2.unread_count > 9 ? '9+' : data2.unread_count;
+                }
+            }
+        } catch(e) {}
+    }
+    // أول استدعاء بعد 5 ثواني من تحميل الصفحة، ثم كل 60 ثانية
+    setTimeout(function() {
+        pollResolvedNotifs();
+        setInterval(pollResolvedNotifs, 60000);
+    }, 5000);
     </script>
 
 </body>
